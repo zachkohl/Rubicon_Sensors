@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
 from flask.ext.bcrypt import Bcrypt, generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+import gviz_api #google chart api
 
 
 app = Flask(__name__)
@@ -25,6 +26,8 @@ class users(UserMixin, db.Model):
 
     def __repr__(self):
         return '<User %r>' % self.username
+
+
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -71,21 +74,35 @@ def login():
         inputed_password = form.password.data
         user = users.query.filter_by(username = username).first()
         pw_hash = bcrypt.generate_password_hash(inputed_password) #See https://flask-bcrypt.readthedocs.io/en/latest/
-        flash('got to here')
-        if check_password_hash( user.password, inputed_password):
-            flash('password matches!')
-            login_user(user)
+        if user:
+            if check_password_hash( user.password, inputed_password):
+                login_user(user)
+                return redirect(url_for('dashboard'))
+            else:
+                flash('password failed')
+                return redirect(url_for('login'))
         else:
-            flash('password failed')
-
-        return redirect(url_for('login'))
+            flash('invalid username')
 
     return render_template('login.html', form=form)
 
 @app.route('/dashboard.html')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    dbResults = db.engine.execute("SELECT * FROM googledata3")
+    description = {"year": ("string", "year"),"probe1": ("number", "probe1"),"probe5": ("number", "probe5")} #This is the headers for the google chart
+
+    data=[] #create empty array
+    for row in dbResults:
+        items = {'year': row['year'], 'probe1': row['probe1'], 'probe5':row['probe5']} #recall a table is an array of arrays
+        data.append(items) #load array
+
+    #Load into google charts systems to output a JSON string that can be used by Google charts
+    data_table = gviz_api.DataTable(description)
+    data_table.LoadData(data)
+    json = data_table.ToJSon(columns_order=("year", "probe1","probe5"), order_by="year")
+
+    return render_template('dashboard.html',json=json) #pass json object off to template for rendering
 
 @app.route('/logout.html')
 @login_required
