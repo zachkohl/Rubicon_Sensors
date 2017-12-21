@@ -17,31 +17,75 @@
 <p>Hi {{current_user.username}}!</p>
 {% endif %}
 
-<!-- Chart -->
+<!-- Chart stuff -->
 
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
-    google.charts.load('current',{'packages':['corechart']});
-    google.charts.setOnLoadCallback(drawChart);
+   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+   <script type="text/javascript">
+   google.charts.load('current',{'packages':['corechart']});
+   google.charts.setOnLoadCallback(drawChart);
+
+//function prepData is my homemade function that takes the python data and converts it into an array for addrows in Google Charts
+function prepData ()  {
+//bring the data in from python
+// must use the | safe to get things to work. The | safe makes it so all the crazy {}))] characters show up right
+array_ISO8601 = {{array_ISO8601 | safe}};
+array_probe1 = {{array_probe1 | safe}};
+array_probe2 = {{array_probe2 | safe}};
+array_probe3 = {{array_probe3 | safe}};
+array_probe4 = {{array_probe4 | safe}};
+array_probe5 = {{array_probe5 | safe}};
+row = [] //prep empty array
+for (var i = 0; i < array_ISO8601.length; i++) {
+  row[i] = [new Date(array_ISO8601[i]),array_probe1[i],array_probe2[i],array_probe3[i],array_probe4[i],array_probe5[i]]
+} //adds the array inside of the array. Recall that the schema is handled elsewhere by addColumn in Google Charts
+return row;
+}
+prepData(); //Call the function
+
+//below is stuff for the Google chart
+   function drawChart() {
+     // Create the data table.
+     var data = new google.visualization.DataTable();
+     data.addColumn('date', 'time'); //Each column must be specified. Got to give the schema out just like most systems.
+     data.addColumn('number', 'probe1');
+     data.addColumn('number', 'probe2');
+     data.addColumn('number', 'probe3');
+     data.addColumn('number', 'probe4');
+     data.addColumn('number', 'probe5');
+     //Row is an array of arrays, our list of columns. Put each row as an item in the first array
+    //Then add the column items inside the second array. Each item is in its datatype and is
+   //seperated by a ,.
+   //Row is an array of arrays, our list of columns. Put each row as an item in the first array
+  //Then add the column items inside the second array. Each item is in its datatype and is
+  //seperated by a ,.
+  // see https://developers.google.com/chart/interactive/docs/gallery/linechart
+  //All the work is done in the prepData function up above
+     data.addRows(row)
+     //options is where the consmetics get altered for the chart
+     var options = {'title':'Mock sensor data',
+                    'width':800,
+                    'height':300,
+                    hAxis: {
+                      format: 'M/dd/yy' //Format is tricky, they have a lot of documentation: see example at https://jsfiddle.net/api/post/library/pure/
+                    }
+                  };
+
+     var chart = new google.visualization.LineChart(document.getElementById('curve_chart')); //Prep the chart object
+     chart.draw(data, options); //instantate it with the preped data and the options
+   }
+ </script>
 
 
-    function drawChart() {
-      var json_data = new google.visualization.DataTable({{json | safe}}, 0.6);
-      var options = {
-        title: 'Sensor Data',
-        curveType: 'function',
-        legend: {posistion: 'bottom' }
-      };
+<!-- Put the chart in the HTML stream -->
+   <div id="curve_chart" style ="width: 900px; height: 500px"></div>
 
-      var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
-      chart.draw(json_data, options);
-    }
-    </script>
+<!-- end chart stuff -->
 
-    <div id="curve_chart" style ="width: 900px; height: 500px"></div>
-
-
-<!-- end chart -->
+<!-- <p> </p>
+<script>
+x = New Date(2014, 10, 15, 0, 30);
+console.log(x);
+</script> -->
 
 
 </div>
@@ -64,3 +108,4 @@
 
 
 {%endblock%}
+
