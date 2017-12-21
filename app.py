@@ -194,8 +194,8 @@ def particle():
    # form = InputForm(request.form) #for use with human html interface
     year = 1
     if request.method == 'POST':
-        data = request.form   #see http://flask.pocoo.org/docs/0.12/api/#flask.Request
-        temp = data['data']   #look inside the multidict
+        webhook = request.form   #see http://flask.pocoo.org/docs/0.12/api/#flask.Request
+        data = webhook['data']   #look inside the multidict
 
         year = year+1
         probe5 = 10
@@ -203,10 +203,10 @@ def particle():
         #probe1=form.probe1.data #for use with human html interface
         #probe5=form.probe5.data #for use with human html interface
         #db.engine.execute("INSERT INTO chartdata(year,probe1,probe5) VALUES (%s, %s, %s)",(year, data,probe5)) #for use with human html interface
-        db.engine.execute("INSERT INTO chartdata(year,probe1, probe5) VALUES (%s, %s, %s)",(year, temp, probe5))
+        #db.engine.execute("INSERT INTO chartdata(year,probe1, probe5) VALUES (%s, %s, %s)",(year, temp, probe5))
         return redirect(url_for('register'))
 
-    return render_template('input.html')
+    return render_template('input.html',data=data)
 
 
 if __name__ == '__main__':
