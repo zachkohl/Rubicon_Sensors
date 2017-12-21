@@ -7,6 +7,9 @@ import gviz_api #google chart api
 
 
 
+
+
+
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
 
@@ -28,7 +31,6 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 
-
 # Login Stuff
 
 class users(UserMixin, db.Model):
@@ -45,7 +47,27 @@ class users(UserMixin, db.Model):
     def __repr__(self):
         return '<User %r>' % self.username
 
+#Other database models
+    #Create a model of the database for use in python
+class electron1(db.Model): #The name is the name from the SQL database. This is not about setting up a SQL database!
+                               #It is about creating a local model of the far away SQL database
+                               #We pass in db.model because that will turn the class into something that SQLAlchemy can use SPECIAL TO FLASK SQLALCHEMY
+                               #Recall  db = SQLAlchemy(app)
+    __tablename__ = "electron1" #The name of the actual SQL table that this local python class is going to represent
+    id = db.Column('id', db.Integer, primary_key=True) #Describes the first column.
+                                                                #Input arguments are the column name, what the datatype is, and if it is a primary key
+                                                                #Don't have to worry about auto imcrement normally because SQL does that automatically. See http://docs.sqlalchemy.org/en/latest/core/metadata.html#sqlalchemy.schema.Column.params.onupdate
 
+    ISO8601 = db.Column('ISO8601', db.String)                   #descriptions of the other columns
+    probe1 = db.Column('probe1', db.Numeric)
+    probe2 = db.Column('probe2', db.Numeric)
+    probe3 = db.Column('probe3', db.Numeric)
+    probe4 = db.Column('probe4', db.Numeric)
+    probe5 = db.Column('probe5', db.Numeric)
+    timestamp = db.Column('timestamp', db.String)
+
+    #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
+    # or whatever we name it. Things like electron1.query.all() See functions for use examples.
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -55,10 +77,10 @@ def load_user(user_id):
     return users.query.get(int(user_id))
 
 
-#@app.route('/')
-#def home():
-#    dbResults = db.engine.execute("SELECT * FROM chartdata")
-#    return render_template('home.html',dbResults=dbResults)
+@app.route('/')
+def home():
+
+    return render_template('home.html')
 
 
 class RegistrationForm(Form):
@@ -111,23 +133,54 @@ def login():
 
     return render_template('login.html', form=form)
 
-@app.route('/') #have this set to be the home page
+@app.route('/dashboard.html') #have this set to be the home page
 #@login_required #makes it so the dashboard can only be seen when logged in
 def dashboard():
-    dbResults = db.engine.execute("SELECT * FROM chartdata")
-    description = {"year": ("string", "year"),"probe1": ("number", "probe1"),"probe5": ("number", "probe5")} #This is the headers for the google chart
+#This is the homepage. Doing experiments. See http://banjolanddesign.com/flask-google-charts.html
+            # See https://www.codementor.io/sheena/understanding-sqlalchemy-cheat-sheet-du107lawl
+            # See https://www.youtube.com/watch?v=Tu4vRU4lt6k
+            #http://flask-sqlalchemy.pocoo.org/2.3/quickstart/
+    chartdata = electron1.query.all() #This returns a lists of dictionaries. Each item in the list is a dictionary (dictionary = key-value pair)
+                                        #The key-value pair can then ben accessed using dot (like chartdata[0].key) noation or ["key"] notation. ( like chartdata[0]["key"])
+                                        #The key is always the header to that column.
+                                        #Lists can be iterated over, dictionaries can't. However, lists cannot access their items using dot notation.
+                                        #This explains why one must first read the row, then the column. Remember Roman Catholics.
 
-    data=[] #create empty array
-    for row in dbResults:
-        items = {'year': row['year'], 'probe1': row['probe1'], 'probe5':row['probe5']} #recall a table is an array of arrays
-        data.append(items) #load array
 
-    #Load into google charts systems to output a JSON string that can be used by Google charts
-    data_table = gviz_api.DataTable(description)
-    data_table.LoadData(data)
-    json = data_table.ToJSon(columns_order=("year", "probe1","probe5"), order_by="year")
 
-    return render_template('dashboard.html',json=json) #pass json object off to template for rendering
+    #The following three lines are how one gets a column out of this thing.
+    array_ISO8601 = [] #prep the empty list
+    for items in chartdata: #Iteration will cycle through each row
+        array_ISO8601.append(items.ISO8601) #use dot notation to only view one column of each row you are iterating over
+        #Result is all the other columns are removed and the list now only has one column to it. ``
+
+    array_probe1 = []
+    for items in chartdata:
+        array_probe1.append(float(str(items.probe1)))
+        #Exlpanation on float(str())
+        # Recall that javascript stores all numbers as just a 'number'.
+        # A number in javascript is always a floating point number. Google charts is javascript,
+        # so we need to get the decimals from mysql into a format javascript can understand. The float()
+        # function does not work on raw mysql decimals, so first to a string, then to a float. Seems to work
+        # pretty well.
+    array_probe2 = []
+    for items in chartdata:
+        array_probe2.append(float(str(items.probe2)))
+
+    array_probe3 = []
+    for items in chartdata:
+        array_probe3.append(float(str(items.probe3)))
+
+    array_probe4 = []
+    for items in chartdata:
+        array_probe4.append(float(str(items.probe4)))
+
+    array_probe5 = []
+    for items in chartdata:
+        array_probe5.append(float(str(items.probe5)))
+
+
+    return render_template('dashboard.html',array_ISO8601=array_ISO8601,array_probe1=array_probe1,array_probe2=array_probe2,array_probe3=array_probe3,array_probe4=array_probe4,array_probe5=array_probe5) #Pass arrays containing columns to the javascript
 
 @app.route('/logout.html')
 @login_required
