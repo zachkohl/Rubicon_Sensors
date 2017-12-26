@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user, LoginManager, UserMixin
+from wtforms import Form, BooleanField, StringField, validators,PasswordField
 from werkzeug.security import check_password_hash, generate_password_hash #don't know why this works, have not installed in virtualdev
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
+
 from flask.ext.bcrypt import Bcrypt, generate_password_hash, check_password_hash
 #from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import gviz_api #google chart api
@@ -13,24 +15,24 @@ import gviz_api #google chart api
 
 
 app = Flask(__name__) #Starts the flask application, passes into other stuff. Used to tie the whole website framework together
+bcrypt = Bcrypt(app) #use for encryption
 
-
-# DATABASE: use this stuff for local desktop
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-#db = SQLAlchemy(app)
+ #DATABASE: use this stuff for local desktop
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
+db = SQLAlchemy(app)
 
 
 # DATABASE: use this stuff for deployment on python anywhere
-SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
-     username="rubiconsensors",
-     password="wf5PWRM4",
-     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-     databasename="rubiconsensors$riversensedb",
- )
-app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
+# SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+#      username="rubiconsensors",
+#      password="wf5PWRM4",
+#      hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+#      databasename="rubiconsensors$riversensedb",
+#  )
+# app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+# app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# db = SQLAlchemy(app)
 #End database deployment
 
 
@@ -65,6 +67,14 @@ class electron1(db.Model): #The name is the name from the SQL database. This is 
 login_manager = LoginManager() #Create an instance of Flask-Login
 login_manager.init_app(app) #Associate the instance with the fask app
 
+#These are forms that are used later. use tools from wtforms
+class RegistrationForm(Form):
+    username     = StringField('Username', [validators.Length(min=4, max=25),validators.Required()])
+    password     = PasswordField('Password', [validators.Length(min=4, max=25),validators.Required()])
+
+class LoginForm(Form):
+    username     = StringField('Username', [validators.Required()])
+    password     = PasswordField('Password', [validators.Required()])
 
 #Create user class that will tell us something about the users
 
@@ -104,6 +114,24 @@ all_users = {
     "bob": User("bob", generate_password_hash("less-secret")),
     "caroline": User("caroline", generate_password_hash("completely-secret")),
 }
+#Below is the database stuff
+class users(UserMixin, db.Model):
+     #This is how you make a new table in SQL Alchemy. It is a table that represents a table in SQL.
+     #See https://www.pythoncentral.io/introductory-tutorial-python-sqlalchemy/
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True)
+    email = db.Column(db.String(120), unique=True)
+    password = db.Column(db.String)
+
+    def __init__(self, username, email,password):
+        self.username = username
+        self.email = email
+        self.password = password
+
+    def __repr__(self):
+        return '<User %r>' % self.username
+
+
 
 @login_manager.user_loader #This is a decorator, it dynamically updates the login manager class without using a subcass. See https://wiki.python.org/moin/PythonDecorators
 def load_user(user_id):
@@ -112,30 +140,49 @@ def load_user(user_id):
 
 @app.route("/login/", methods =["GET", "POST"]) #Allow for post methods (RESTful API stuff)
 def login():
-    if request.method == "GET":
-        return render_template("login_page.html", error=False) #This if statement says just load the page if all they want to do is see it (GET method)
 
-    username = request.form["username"] #The form method is part of the POST method. This line of code just puts the username value from the form
-                                        #(I think it is another dictionary) into a more usable variable
-    if username not in all_users:
-        #This if statement checks if the username from the form is in the all_users dictionary. If it is not, it loads the page but turns the error flag to true.
-        return render_template("login_page.html", error=True)
-    user = all_users[username] #This pulls out (creates a specific copy) of the correct user object stored in all users that corresponds to the inputed username
-                               #Note this local object has a LOWERCASE! The class has an uppercase.
+    form = LoginForm(request.form)
+    if request.method == 'POST':
+        username = form.username.data
+        inputed_password = form.password.data
+        user = users.query.filter_by(username = username).first()
+        pw_hash = bcrypt.generate_password_hash(inputed_password) #See https://flask-bcrypt.readthedocs.io/en/latest/
+        if user:
+            if check_password_hash( user.password, inputed_password):
+                login_user(user)
+                return redirect(url_for('dashboard'))
+            else:
+                #flash('password failed')
+                return redirect(url_for('login'))
+        else:
+            return redirect(url_for('login'))
 
-    if not user.check_password(request.form["password"]):
-        #The if not checks for true/false. Recall the check_password method was created earlier when we defined the user subclass of the UserMixin Superclass.
-        #It takes the password from the form (sumitted by POST) and passes it into the check_password method. Returns true or false becuase that is what the check_password_hash
-        #method does. We imported check_password_hash from a library.
-        return redirect('/dashboard.html') #render_template("login_page.html", error=True) #IF the user.check_password is NOT true (bad password), send them back to the template with the error flag raised.
-
-    login_user(user)
-
-    #If we make it to this line without sending the user off with a "return" which I think ends the function, we get to use the library imported login_user object.
-                     #Pass the user object into it so it logs in the right person.
-    return redirect('/')
-    #Now that the individual is logged in, send them off to user logged in land (the dashboard).
-                                      #Using dashboard.html is a slight variation from the instructions.
+    return render_template('login.html', form=form)
+    #
+    # if request.method == "GET":
+    #     return render_template("login.html", error=False) #This if statement says just load the page if all they want to do is see it (GET method)
+    #
+    # username = request.form["username"] #The form method is part of the POST method. This line of code just puts the username value from the form
+    #                                     #(I think it is another dictionary) into a more usable variable
+    # if username not in all_users:
+    #     #This if statement checks if the username from the form is in the all_users dictionary. If it is not, it loads the page but turns the error flag to true.
+    #     return render_template("login.html", error=True)
+    # user = all_users[username] #This pulls out (creates a specific copy) of the correct user object stored in all users that corresponds to the inputed username
+    #                            #Note this local object has a LOWERCASE! The class has an uppercase.
+    #
+    # if not user.check_password(request.form["password"]):
+    #     #The if not checks for true/false. Recall the check_password method was created earlier when we defined the user subclass of the UserMixin Superclass.
+    #     #It takes the password from the form (sumitted by POST) and passes it into the check_password method. Returns true or false becuase that is what the check_password_hash
+    #     #method does. We imported check_password_hash from a library.
+    #     return redirect('/dashboard.html') #render_template("login_page.html", error=True) #IF the user.check_password is NOT true (bad password), send them back to the template with the error flag raised.
+    #
+    # login_user(user)
+    #
+    # #If we make it to this line without sending the user off with a "return" which I think ends the function, we get to use the library imported login_user object.
+    #                  #Pass the user object into it so it logs in the right person.
+    # return redirect('/')
+    # #Now that the individual is logged in, send them off to user logged in land (the dashboard).
+    #                                   #Using dashboard.html is a slight variation from the instructions.
 
 
 ###################################################END LOGIN STUFF##################################################
