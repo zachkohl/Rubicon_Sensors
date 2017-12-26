@@ -61,6 +61,7 @@ class electron1(db.Model): #The name is the name from the SQL database. This is 
 #See https://blog.pythonanywhere.com/158/
 
 #Step 1, make sure secrete key is inplace, ours is at the bottom of this document
+
 login_manager = LoginManager() #Create an instance of Flask-Login
 login_manager.init_app(app) #Associate the instance with the fask app
 
@@ -128,7 +129,7 @@ def login():
         #method does. We imported check_password_hash from a library.
         return redirect('/dashboard.html') #render_template("login_page.html", error=True) #IF the user.check_password is NOT true (bad password), send them back to the template with the error flag raised.
 
-    #login_user(user)
+    login_user(user)
 
     #If we make it to this line without sending the user off with a "return" which I think ends the function, we get to use the library imported login_user object.
                      #Pass the user object into it so it logs in the right person.
@@ -234,7 +235,7 @@ def particle():
 
     return render_template('input.html',data=data)
 
-
+app.secret_key="jyooGbO0eXelz9lrRQH6f0FL4r57SRM8"
 if __name__ == '__main__':
-    app.secret_key="jyooGbO0eXelz9lrRQH6f0FL4r57SRM8"
+
     app.run(debug=True)
