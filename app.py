@@ -81,7 +81,8 @@ class User(UserMixin):
     #is created.
     #Within the parantheses, the first parameter must be a reference to teh object itself. By convention
     #this is named "self."
-    #Self can now be used inside the class to refer to the object itself.
+    #Self can now be used inside the class to refer to the object itself. This is just special notation
+    #that has to be this way because of the way python is set up.
     def __init__(self, username, password_hash):
         self.username = username
         self.password_hash = password_hash
@@ -108,9 +109,32 @@ def load_user(user_id):
     return all_users.get(user_id) #All users is a dictionary (key-value pair) and get is a method on dictionaries that selects a key and returns that value.
                                   #This is how we access the "user" object that has been instatiated and using the above code.
 
-@app.route("/login/")
+@app.route("/login/", methods =["GET", "POST"]) #Allow for post methods (RESTful API stuff)
 def login():
-    return render_template("login_page.html")
+    if request.method == "GET":
+        return render_template("login_page.html", error=False) #This if statement says just load the page if all they want to do is see it (GET method)
+
+    username = request.form["username"] #The form method is part of the POST method. This line of code just puts the username value from the form
+                                        #(I think it is another dictionary) into a more usable variable
+    if username not in all_users:
+        #This if statement checks if the username from the form is in the all_users dictionary. If it is not, it loads the page but turns the error flag to true.
+        return render_template("login_page.html", error=True)
+    user = all_users[username] #This pulls out (creates a specific copy) of the correct user object stored in all users that corresponds to the inputed username
+                               #Note this local object has a LOWERCASE! The class has an uppercase.
+
+    if not user.check_password(request.form["password"]):
+        #The if not checks for true/false. Recall the check_password method was created earlier when we defined the user subclass of the UserMixin Superclass.
+        #It takes the password from the form (sumitted by POST) and passes it into the check_password method. Returns true or false becuase that is what the check_password_hash
+        #method does. We imported check_password_hash from a library.
+        return redirect('/dashboard.html') #render_template("login_page.html", error=True) #IF the user.check_password is NOT true (bad password), send them back to the template with the error flag raised.
+
+    #login_user(user)
+
+    #If we make it to this line without sending the user off with a "return" which I think ends the function, we get to use the library imported login_user object.
+                     #Pass the user object into it so it logs in the right person.
+    return redirect('/')
+    #Now that the individual is logged in, send them off to user logged in land (the dashboard).
+                                      #Using dashboard.html is a slight variation from the instructions.
 
 
 ###################################################END LOGIN STUFF##################################################
