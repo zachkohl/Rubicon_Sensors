@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import login_user, LoginManager, UserMixin
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
 from werkzeug.security import check_password_hash, generate_password_hash #don't know why this works, have not installed in virtualdev
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
@@ -147,6 +147,7 @@ def login():
         inputed_password = form.password.data
         user = users.query.filter_by(username = username).first()
         pw_hash = bcrypt.generate_password_hash(inputed_password) #See https://flask-bcrypt.readthedocs.io/en/latest/
+        
         if user:
             if check_password_hash( user.password, inputed_password):
                 login_user(user)
@@ -154,6 +155,8 @@ def login():
             else:
                 #flash('password failed')
                 return redirect(url_for('login'))
+
+
         else:
             return redirect(url_for('login'))
 
@@ -184,6 +187,24 @@ def login():
     # #Now that the individual is logged in, send them off to user logged in land (the dashboard).
     #                                   #Using dashboard.html is a slight variation from the instructions.
 
+@app.route('/register.html', methods = [ "GET", "POST"])
+def register():
+    form = RegistrationForm(request.form)
+    if request.method == 'POST'and form.validate():
+        username = form.username.data
+        password = form.password.data
+        pw_hash = bcrypt.generate_password_hash(password)
+
+        db.engine.execute("INSERT INTO users(username,password) VALUES (%s, %s)",(username, pw_hash))
+        #flash('something got added!')
+        return redirect(url_for('home'))
+    return render_template('register.html', form= form)
+
+@app.route('/logout.html')
+
+def logout():
+    logout_user()
+    return render_template('logout.html')
 
 ###################################################END LOGIN STUFF##################################################
 
@@ -192,6 +213,7 @@ def login():
 
 @app.route('/')
 def home():
+
 
     return render_template('home.html')
 
@@ -213,6 +235,7 @@ class InputForm(Form):
 
 @app.route('/dashboard.html') #have this set to be the home page
 #@login_required #makes it so the dashboard can only be seen when logged in
+@login_required #This makes this page require the user to be logged in to see it.
 def dashboard():
 #This is the homepage. Doing experiments. See http://banjolanddesign.com/flask-google-charts.html
             # See https://www.codementor.io/sheena/understanding-sqlalchemy-cheat-sheet-du107lawl
