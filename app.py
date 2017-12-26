@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import login_user, LoginManager, UserMixin
+from werkzeug.security import check_password_hash, generate_password_hash #don't know why this works, have not installed in virtualdev
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
 from flask.ext.bcrypt import Bcrypt, generate_password_hash, check_password_hash
 #from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -10,7 +12,7 @@ import gviz_api #google chart api
 
 
 
-app = Flask(__name__)
+app = Flask(__name__) #Starts the flask application, passes into other stuff. Used to tie the whole website framework together
 
 
 # DATABASE: use this stuff for local desktop
@@ -29,7 +31,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-
+#End database deployment
 
 
 
@@ -55,7 +57,63 @@ class electron1(db.Model): #The name is the name from the SQL database. This is 
     #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
     # or whatever we name it. Things like electron1.query.all() See functions for use examples.
 
+###################################################LOGIN STUFF######################################################
+#See https://blog.pythonanywhere.com/158/
 
+#Step 1, make sure secrete key is inplace, ours is at the bottom of this document
+login_manager = LoginManager() #Create an instance of Flask-Login
+login_manager.init_app(app) #Associate the instance with the fask app
+
+
+#Create user class that will tell us something about the users
+
+class User(UserMixin):
+ #By passing in the "UserMixin" we inherit all the abilities of the UserMixin class
+#Page 408-409 in the python book explains this really well.
+#The "User" class can now use all the properties and methods of the UserMixin superclass
+
+    #The following methods will be true for each instantation of "User"
+    #in addition to all the methods that are already present from the UserMixin superclass.
+    #Each method has attributes underneath it.
+
+    #The __init__ is called aa constructor. We can only have one per class. Page 372 in the book
+    #talks about this. This is a special function that will be called as soon as the "User" object
+    #is created.
+    #Within the parantheses, the first parameter must be a reference to teh object itself. By convention
+    #this is named "self."
+    #Self can now be used inside the class to refer to the object itself.
+    def __init__(self, username, password_hash):
+        self.username = username
+        self.password_hash = password_hash
+
+    #The following methods now exist for use with each "User" object. They return things when called.
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    #Notice how get_id refers to the object iself using "self"
+    def get_id(self):
+        return self.username
+
+
+#Now lets define some users. Notice that the username and password variables pass into user, which passes into UserMixin
+# We use a dictionary so we can use the functionality of key-value pairing later on.
+all_users = {
+    "admin": User("admin", generate_password_hash("secret")),
+    "bob": User("bob", generate_password_hash("less-secret")),
+    "caroline": User("caroline", generate_password_hash("completely-secret")),
+}
+
+@login_manager.user_loader #This is a decorator, it dynamically updates the login manager class without using a subcass. See https://wiki.python.org/moin/PythonDecorators
+def load_user(user_id):
+    return all_users.get(user_id) #All users is a dictionary (key-value pair) and get is a method on dictionaries that selects a key and returns that value.
+                                  #This is how we access the "user" object that has been instatiated and using the above code.
+
+@app.route("/login/")
+def login():
+    return render_template("login_page.html")
+
+
+###################################################END LOGIN STUFF##################################################
 
 
 
