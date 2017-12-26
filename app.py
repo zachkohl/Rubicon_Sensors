@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import login_user, LoginManager, UserMixin
+from werkzeug.security import check_password_hash, generate_password_hash #don't know why this works, have not installed in virtualdev
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
 from flask.ext.bcrypt import Bcrypt, generate_password_hash, check_password_hash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+#from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import gviz_api #google chart api
 
 
@@ -10,8 +12,8 @@ import gviz_api #google chart api
 
 
 
-app = Flask(__name__)
-bcrypt = Bcrypt(app)
+app = Flask(__name__) #Starts the flask application, passes into other stuff. Used to tie the whole website framework together
+
 
 # DATABASE: use this stuff for local desktop
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
@@ -29,23 +31,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
+#End database deployment
 
 
-# Login Stuff
-
-class users(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True)
-    email = db.Column(db.String(120), unique=True)
-    password = db.Column(db.String)
-
-    def __init__(self, username, email,password):
-        self.username = username
-        self.email = email
-        self.password = password
-
-    def __repr__(self):
-        return '<User %r>' % self.username
 
 #Other database models
     #Create a model of the database for use in python
@@ -69,12 +57,90 @@ class electron1(db.Model): #The name is the name from the SQL database. This is 
     #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
     # or whatever we name it. Things like electron1.query.all() See functions for use examples.
 
-login_manager = LoginManager()
-login_manager.init_app(app)
+###################################################LOGIN STUFF######################################################
+#See https://blog.pythonanywhere.com/158/
 
-@login_manager.user_loader
+#Step 1, make sure secrete key is inplace, ours is at the bottom of this document
+
+login_manager = LoginManager() #Create an instance of Flask-Login
+login_manager.init_app(app) #Associate the instance with the fask app
+
+
+#Create user class that will tell us something about the users
+
+class User(UserMixin):
+ #By passing in the "UserMixin" we inherit all the abilities of the UserMixin class
+#Page 408-409 in the python book explains this really well.
+#The "User" class can now use all the properties and methods of the UserMixin superclass
+
+    #The following methods will be true for each instantation of "User"
+    #in addition to all the methods that are already present from the UserMixin superclass.
+    #Each method has attributes underneath it.
+
+    #The __init__ is called aa constructor. We can only have one per class. Page 372 in the book
+    #talks about this. This is a special function that will be called as soon as the "User" object
+    #is created.
+    #Within the parantheses, the first parameter must be a reference to teh object itself. By convention
+    #this is named "self."
+    #Self can now be used inside the class to refer to the object itself. This is just special notation
+    #that has to be this way because of the way python is set up.
+    def __init__(self, username, password_hash):
+        self.username = username
+        self.password_hash = password_hash
+
+    #The following methods now exist for use with each "User" object. They return things when called.
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    #Notice how get_id refers to the object iself using "self"
+    def get_id(self):
+        return self.username
+
+
+#Now lets define some users. Notice that the username and password variables pass into user, which passes into UserMixin
+# We use a dictionary so we can use the functionality of key-value pairing later on.
+all_users = {
+    "admin": User("admin", generate_password_hash("secret")),
+    "bob": User("bob", generate_password_hash("less-secret")),
+    "caroline": User("caroline", generate_password_hash("completely-secret")),
+}
+
+@login_manager.user_loader #This is a decorator, it dynamically updates the login manager class without using a subcass. See https://wiki.python.org/moin/PythonDecorators
 def load_user(user_id):
-    return users.query.get(int(user_id))
+    return all_users.get(user_id) #All users is a dictionary (key-value pair) and get is a method on dictionaries that selects a key and returns that value.
+                                  #This is how we access the "user" object that has been instatiated and using the above code.
+
+@app.route("/login/", methods =["GET", "POST"]) #Allow for post methods (RESTful API stuff)
+def login():
+    if request.method == "GET":
+        return render_template("login_page.html", error=False) #This if statement says just load the page if all they want to do is see it (GET method)
+
+    username = request.form["username"] #The form method is part of the POST method. This line of code just puts the username value from the form
+                                        #(I think it is another dictionary) into a more usable variable
+    if username not in all_users:
+        #This if statement checks if the username from the form is in the all_users dictionary. If it is not, it loads the page but turns the error flag to true.
+        return render_template("login_page.html", error=True)
+    user = all_users[username] #This pulls out (creates a specific copy) of the correct user object stored in all users that corresponds to the inputed username
+                               #Note this local object has a LOWERCASE! The class has an uppercase.
+
+    if not user.check_password(request.form["password"]):
+        #The if not checks for true/false. Recall the check_password method was created earlier when we defined the user subclass of the UserMixin Superclass.
+        #It takes the password from the form (sumitted by POST) and passes it into the check_password method. Returns true or false becuase that is what the check_password_hash
+        #method does. We imported check_password_hash from a library.
+        return redirect('/dashboard.html') #render_template("login_page.html", error=True) #IF the user.check_password is NOT true (bad password), send them back to the template with the error flag raised.
+
+    login_user(user)
+
+    #If we make it to this line without sending the user off with a "return" which I think ends the function, we get to use the library imported login_user object.
+                     #Pass the user object into it so it logs in the right person.
+    return redirect('/')
+    #Now that the individual is logged in, send them off to user logged in land (the dashboard).
+                                      #Using dashboard.html is a slight variation from the instructions.
+
+
+###################################################END LOGIN STUFF##################################################
+
+
 
 
 @app.route('/')
@@ -83,13 +149,7 @@ def home():
     return render_template('home.html')
 
 
-class RegistrationForm(Form):
-    username     = StringField('Username', [validators.Length(min=4, max=25),validators.Required()])
-    password     = PasswordField('Password', [validators.Length(min=4, max=25),validators.Required()])
 
-class LoginForm(Form):
-    username     = StringField('Username', [validators.Required()])
-    password     = PasswordField('Password', [validators.Required()])
 
 class InputForm(Form):
     year         = StringField()
@@ -98,40 +158,11 @@ class InputForm(Form):
     data         = StringField()
 
 
-@app.route('/register.html', methods = [ "GET", "POST"])
-def register():
-    form = RegistrationForm(request.form)
-    if request.method == 'POST'and form.validate():
-        username = form.username.data
-        password = form.password.data
-        pw_hash = bcrypt.generate_password_hash(password)
-
-        db.engine.execute("INSERT INTO users(username,password) VALUES (%s, %s)",(username, pw_hash))
-        #flash('something got added!')
-        return redirect(url_for('register'))
-    return render_template('register.html', form= form)
 
 
 
-@app.route('/login.html', methods = ['GET', 'POST'])
-def login():
-    form = LoginForm(request.form)
-    if request.method == 'POST':
-        username = form.username.data
-        inputed_password = form.password.data
-        user = users.query.filter_by(username = username).first()
-        pw_hash = bcrypt.generate_password_hash(inputed_password) #See https://flask-bcrypt.readthedocs.io/en/latest/
-        if user:
-            if check_password_hash( user.password, inputed_password):
-                login_user(user)
-                return redirect(url_for('dashboard'))
-            else:
-                #flash('password failed')
-                return redirect(url_for('login'))
-        else:
-            return redirect(url_for('login'))
 
-    return render_template('login.html', form=form)
+
 
 @app.route('/dashboard.html') #have this set to be the home page
 #@login_required #makes it so the dashboard can only be seen when logged in
@@ -182,11 +213,7 @@ def dashboard():
 
     return render_template('dashboard.html',array_ISO8601=array_ISO8601,array_probe1=array_probe1,array_probe2=array_probe2,array_probe3=array_probe3,array_probe4=array_probe4,array_probe5=array_probe5) #Pass arrays containing columns to the javascript
 
-@app.route('/logout.html')
-@login_required
-def logout():
-    logout_user()
-    return render_template('logout.html')
+
 
 
 @app.route('/input.html', methods = ['GET', 'POST']) #This function is for the particle webhook
@@ -208,7 +235,7 @@ def particle():
 
     return render_template('input.html',data=data)
 
-
+app.secret_key="jyooGbO0eXelz9lrRQH6f0FL4r57SRM8"
 if __name__ == '__main__':
-    app.secret_key="jyooGbO0eXelz9lrRQH6f0FL4r57SRM8"
+
     app.run(debug=True)
