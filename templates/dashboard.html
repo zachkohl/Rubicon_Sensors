@@ -28,7 +28,7 @@ function prepData ()  {
 //bring the data in from python
 // must use the | safe to get things to work. The | safe makes it so all the crazy {}))] characters show up right
 array_ISO8601 = {{array_ISO8601 | safe}};
-array_probe1 = {{array_data | safe}};
+array_data = {{data | safe}};
 
 row = [] //prep empty array
 for (var i = 0; i < array_ISO8601.length; i++) {

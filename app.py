@@ -48,8 +48,9 @@ class pipe_sensor(db.Model): #The name is the name from the SQL database. This i
                                                                 #Input arguments are the column name, what the datatype is, and if it is a primary key
                                                                 #Don't have to worry about auto imcrement normally because SQL does that automatically. See http://docs.sqlalchemy.org/en/latest/core/metadata.html#sqlalchemy.schema.Column.params.onupdate
 
-    ISO8601 = db.Column('ISO8601', db.String)                   #descriptions of the other columns
-    probe1 = db.Column('data', db.Integer)
+    ISO8601 = db.Column('ISO8601', db.String)                   #descriptions of the other columns, for explanation of legal data types, see https://dev.mysql.com/doc/refman/5.7/en/numeric-types.html
+                                                                #Recall also that this is flask-SQLAlchemy, so google the docs for more info.
+    data = db.Column('data', db.Integer)
     timestamp = db.Column('timestamp', db.String)
 
     #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
@@ -242,7 +243,7 @@ def dashboard():
 
     array_data = []
     for items in chartdata:
-        array_probe1.append(float(items.data))
+        array_data.append(float(items.data))
         #Exlpanation on float(str())
         # Recall that javascript stores all numbers as just a 'number'.
         # A number in javascript is always a floating point number. Google charts is javascript,
@@ -252,7 +253,7 @@ def dashboard():
 
 
 
-    return render_template('dashboard.html',array_ISO8601=array_ISO8601,array_data=array_data) #Pass arrays containing columns to the javascript
+    return render_template('dashboard.html',array_ISO8601=array_ISO8601,data=array_data) #Pass arrays containing columns to the javascript
 
 
 
