@@ -131,11 +131,15 @@ class users(UserMixin, db.Model):
     def __repr__(self):
         return '<User %r>' % self.username
 
-
-
-@login_manager.user_loader #This is a decorator, it dynamically updates the login manager class without using a subcass. See https://wiki.python.org/moin/PythonDecorators
+#The following decorator is required in the flask login instructions. It helps the login make sure
+#it is loggging in the correct the user.
+@login_manager.user_loader
 def load_user(user_id):
-    return all_users.get(user_id) #All users is a dictionary (key-value pair) and get is a method on dictionaries that selects a key and returns that value.
+    return users.query.get(int(user_id))
+
+#@login_manager.user_loader #This is a decorator, it dynamically updates the login manager class without using a subcass. See https://wiki.python.org/moin/PythonDecorators
+#def load_user(user_id):
+#    return all_users.get(user_id) #All users is a dictionary (key-value pair) and get is a method on dictionaries that selects a key and returns that value.
                                   #This is how we access the "user" object that has been instatiated and using the above code.
 
 @app.route("/login/", methods =["GET", "POST"]) #Allow for post methods (RESTful API stuff)
@@ -147,7 +151,7 @@ def login():
         inputed_password = form.password.data
         user = users.query.filter_by(username = username).first()
         pw_hash = bcrypt.generate_password_hash(inputed_password) #See https://flask-bcrypt.readthedocs.io/en/latest/
-        
+
         if user:
             if check_password_hash( user.password, inputed_password):
                 login_user(user)
