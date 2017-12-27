@@ -145,15 +145,19 @@ def load_user(user_id):
 @app.route("/login/", methods =["GET", "POST"]) #Allow for post methods (RESTful API stuff)
 def login():
 
-    form = LoginForm(request.form)
+    form = LoginForm(request.form) #local version of form.
     if request.method == 'POST':
+        #If it is the post method, then use the RESTful API form stuff (A sub part of POST) as variables
         username = form.username.data
         inputed_password = form.password.data
-        user = users.query.filter_by(username = username).first()
-        pw_hash = bcrypt.generate_password_hash(inputed_password) #See https://flask-bcrypt.readthedocs.io/en/latest/
+        user = users.query.filter_by(username = username).first() #Do a database query of the username
+        pw_hash = bcrypt.generate_password_hash(inputed_password) #Create a password hash to compare #See https://flask-bcrypt.readthedocs.io/en/latest/
 
         if user:
+            #If the user object got created by the database, then do this stuff
             if check_password_hash( user.password, inputed_password):
+                #Like check the password
+                #And log in the user
                 login_user(user)
                 return redirect(url_for('dashboard'))
             else:
@@ -191,6 +195,7 @@ def login():
     # #Now that the individual is logged in, send them off to user logged in land (the dashboard).
     #                                   #Using dashboard.html is a slight variation from the instructions.
 
+#The register function is very similar to login. But it stores into a database rather than doing a query.
 @app.route('/register.html', methods = [ "GET", "POST"])
 def register():
     form = RegistrationForm(request.form)
@@ -205,7 +210,7 @@ def register():
     return render_template('register.html', form= form)
 
 @app.route('/logout.html')
-
+#This is pretty simple, we just call the library included logout_user()
 def logout():
     logout_user()
     return render_template('logout.html')
@@ -214,11 +219,9 @@ def logout():
 
 
 
-
+#This is the login
 @app.route('/')
 def home():
-
-
     return render_template('home.html')
 
 
