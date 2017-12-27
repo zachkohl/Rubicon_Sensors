@@ -4,7 +4,7 @@
 
 {%block body%}
 
-<!-- import JSON -->
+
 
 
 <!-- setup container stuff from bootstramp -->
@@ -28,14 +28,11 @@ function prepData ()  {
 //bring the data in from python
 // must use the | safe to get things to work. The | safe makes it so all the crazy {}))] characters show up right
 array_ISO8601 = {{array_ISO8601 | safe}};
-array_probe1 = {{array_probe1 | safe}};
-array_probe2 = {{array_probe2 | safe}};
-array_probe3 = {{array_probe3 | safe}};
-array_probe4 = {{array_probe4 | safe}};
-array_probe5 = {{array_probe5 | safe}};
+array_probe1 = {{array_data | safe}};
+
 row = [] //prep empty array
 for (var i = 0; i < array_ISO8601.length; i++) {
-  row[i] = [new Date(array_ISO8601[i]),array_probe1[i],array_probe2[i],array_probe3[i],array_probe4[i],array_probe5[i]]
+  row[i] = [new Date(array_ISO8601[i]),array_data[i]]
 } //adds the array inside of the array. Recall that the schema is handled elsewhere by addColumn in Google Charts
 return row;
 }
@@ -46,11 +43,8 @@ prepData(); //Call the function
      // Create the data table.
      var data = new google.visualization.DataTable();
      data.addColumn('date', 'time'); //Each column must be specified. Got to give the schema out just like most systems.
-     data.addColumn('number', 'probe1');
-     data.addColumn('number', 'probe2');
-     data.addColumn('number', 'probe3');
-     data.addColumn('number', 'probe4');
-     data.addColumn('number', 'probe5');
+     data.addColumn('number', 'Liters/Minute');
+
      //Row is an array of arrays, our list of columns. Put each row as an item in the first array
     //Then add the column items inside the second array. Each item is in its datatype and is
    //seperated by a ,.
@@ -65,7 +59,7 @@ prepData(); //Call the function
                     'width':800,
                     'height':300,
                     hAxis: {
-                      format: 'M/dd/yy' //Format is tricky, they have a lot of documentation: see example at https://jsfiddle.net/api/post/library/pure/
+                      format: 'M/dd/yy' //Format is tricky, they have a lot of documentation
                     }
                   };
 
@@ -80,11 +74,6 @@ prepData(); //Call the function
 
 <!-- end chart stuff -->
 
-<!-- <p> </p>
-<script>
-x = New Date(2014, 10, 15, 0, 30);
-console.log(x);
-</script> -->
 
 
 </div>
@@ -107,4 +96,3 @@ console.log(x);
 
 
 {%endblock%}
-
