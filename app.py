@@ -227,13 +227,6 @@ def home():
 
 
 
-class InputForm(Form):
-    year         = StringField()
-    probe1       = StringField()
-    probe5       = StringField()
-    data         = StringField()
-
-
 
 
 
@@ -295,19 +288,14 @@ def dashboard():
 
 @app.route('/input.html', methods = ['GET', 'POST']) #This function is for the particle webhook
 def particle():
-   # form = InputForm(request.form) #for use with human html interface
-    year = 1
+
     if request.method == 'POST':
         webhook = request.form   #see http://flask.pocoo.org/docs/0.12/api/#flask.Request
         data = webhook['data']   #look inside the multidict
+        ISO8601 = webhook['published_at']
 
-        year = year+1
-        probe5 = 10
-        #year = form.year.data #for use with human html interface
-        #probe1=form.probe1.data #for use with human html interface
-        #probe5=form.probe5.data #for use with human html interface
-        #db.engine.execute("INSERT INTO chartdata(year,probe1,probe5) VALUES (%s, %s, %s)",(year, data,probe5)) #for use with human html interface
-        #db.engine.execute("INSERT INTO chartdata(year,probe1, probe5) VALUES (%s, %s, %s)",(year, temp, probe5))
+
+        db.engine.execute("INSERT INTO pipe_sensor(ISO8601,data) VALUES (%s, %s)",(ISO8601, data))
         return redirect(url_for('register'))
 
     return render_template('input.html',data=data)
