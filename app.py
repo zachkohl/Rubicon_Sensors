@@ -15,24 +15,24 @@ import gviz_api #google chart api
 
 
 app = Flask(__name__) #Starts the flask application, passes into other stuff. Used to tie the whole website framework together
-bcrypt = Bcrypt(app) #use for encryption
-
- #DATABASE: use this stuff for local desktop
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-db = SQLAlchemy(app)
+# bcrypt = Bcrypt(app) #use for encryption
+#
+#  #DATABASE: use this stuff for local desktop
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
+# db = SQLAlchemy(app)
 
 
 # DATABASE: use this stuff for deployment on python anywhere
-# SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
-#      username="rubiconsensors",
-#      password="wf5PWRM4",
-#      hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-#      databasename="rubiconsensors$riversensedb",
-#  )
-# app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-# app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# db = SQLAlchemy(app)
+SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+     username="rubiconsensors",
+     password="wf5PWRM4",
+     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+     databasename="rubiconsensors$riversensedb",
+ )
+app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 #End database deployment
 
 
