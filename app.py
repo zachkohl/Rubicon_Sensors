@@ -4,10 +4,10 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
 from werkzeug.security import check_password_hash, generate_password_hash #don't know why this works, have not installed in virtualdev
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
-
 from flask.ext.bcrypt import Bcrypt, generate_password_hash, check_password_hash
 #from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import gviz_api #google chart api
+from flask_sslify import SSLify #force HTTPS
 
 
 
@@ -20,9 +20,9 @@ app = Flask(__name__) #Starts the flask application, passes into other stuff. Us
 #
 #  #DATABASE: use this stuff for local desktop
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-# db = SQLAlchemy(app)
-=======
-bcrypt = Bcrypt(app) #use for encryption
+# db = SQLAlchemy(app)  
+# 
+#  bcrypt = Bcrypt(app) #use for encryption
 
  #DATABASE: use this stuff for local desktop
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
@@ -38,7 +38,7 @@ SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostnam
      hostname="rubiconsensors.mysql.pythonanywhere-services.com",
      databasename="rubiconsensors$riversensedb",
  )
-=======
+
       username="rubiconsensors",
       password="wf5PWRM4",
       hostname="rubiconsensors.mysql.pythonanywhere-services.com",
