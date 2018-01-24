@@ -4,13 +4,13 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
 from werkzeug.security import check_password_hash, generate_password_hash #don't know why this works, have not installed in virtualdev
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
-
 from flask.ext.bcrypt import Bcrypt, generate_password_hash, check_password_hash
 #from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import gviz_api #google chart api
+from flask_sslify import SSLify #force HTTPS
 
 
-#helloworld
+
 
 
 
