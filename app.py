@@ -20,9 +20,9 @@ app = Flask(__name__) #Starts the flask application, passes into other stuff. Us
 #
 #  #DATABASE: use this stuff for local desktop
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-# db = SQLAlchemy(app)
-=======
-bcrypt = Bcrypt(app) #use for encryption
+# db = SQLAlchemy(app)  
+# 
+#  bcrypt = Bcrypt(app) #use for encryption
 
  #DATABASE: use this stuff for local desktop
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
@@ -38,7 +38,7 @@ SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostnam
      hostname="rubiconsensors.mysql.pythonanywhere-services.com",
      databasename="rubiconsensors$riversensedb",
  )
-=======
+
       username="rubiconsensors",
       password="wf5PWRM4",
       hostname="rubiconsensors.mysql.pythonanywhere-services.com",
