@@ -38,7 +38,7 @@ SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostnam
      hostname="rubiconsensors.mysql.pythonanywhere-services.com",
      databasename="rubiconsensors$riversensedb",
  )
-=======
+
       username="rubiconsensors",
       password="wf5PWRM4",
       hostname="rubiconsensors.mysql.pythonanywhere-services.com",
