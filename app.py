@@ -15,6 +15,13 @@ import gviz_api #google chart api
 
 
 app = Flask(__name__) #Starts the flask application, passes into other stuff. Used to tie the whole website framework together
+
+# bcrypt = Bcrypt(app) #use for encryption
+#
+#  #DATABASE: use this stuff for local desktop
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
+# db = SQLAlchemy(app)
+=======
 bcrypt = Bcrypt(app) #use for encryption
 
  #DATABASE: use this stuff for local desktop
@@ -22,13 +29,22 @@ bcrypt = Bcrypt(app) #use for encryption
 #db = SQLAlchemy(app)
 
 
+
 # DATABASE: use this stuff for deployment on python anywhere
 SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+
+     username="rubiconsensors",
+     password="wf5PWRM4",
+     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+     databasename="rubiconsensors$riversensedb",
+ )
+=======
       username="rubiconsensors",
       password="wf5PWRM4",
       hostname="rubiconsensors.mysql.pythonanywhere-services.com",
       databasename="rubiconsensors$riversensedb",
   )
+
 app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -39,25 +55,22 @@ db = SQLAlchemy(app)
 
 #Other database models
     #Create a model of the database for use in python
-class electron1(db.Model): #The name is the name from the SQL database. This is not about setting up a SQL database!
+class pipe_sensor(db.Model): #The name is the name from the SQL database. This is not about setting up a SQL database!
                                #It is about creating a local model of the far away SQL database
                                #We pass in db.model because that will turn the class into something that SQLAlchemy can use SPECIAL TO FLASK SQLALCHEMY
                                #Recall  db = SQLAlchemy(app)
-    __tablename__ = "electron1" #The name of the actual SQL table that this local python class is going to represent
+    __tablename__ = "pipe_sensor" #The name of the actual SQL table that this local python class is going to represent
     id = db.Column('id', db.Integer, primary_key=True) #Describes the first column.
                                                                 #Input arguments are the column name, what the datatype is, and if it is a primary key
                                                                 #Don't have to worry about auto imcrement normally because SQL does that automatically. See http://docs.sqlalchemy.org/en/latest/core/metadata.html#sqlalchemy.schema.Column.params.onupdate
 
-    ISO8601 = db.Column('ISO8601', db.String)                   #descriptions of the other columns
-    probe1 = db.Column('probe1', db.Numeric)
-    probe2 = db.Column('probe2', db.Numeric)
-    probe3 = db.Column('probe3', db.Numeric)
-    probe4 = db.Column('probe4', db.Numeric)
-    probe5 = db.Column('probe5', db.Numeric)
+    ISO8601 = db.Column('ISO8601', db.String)                   #descriptions of the other columns, for explanation of legal data types, see https://dev.mysql.com/doc/refman/5.7/en/numeric-types.html
+                                                                #Recall also that this is flask-SQLAlchemy, so google the docs for more info.
+    data = db.Column('data', db.Integer)
     timestamp = db.Column('timestamp', db.String)
 
     #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
-    # or whatever we name it. Things like electron1.query.all() See functions for use examples.
+    # or whatever we name it. Things like pipe_sensor.query.all() See functions for use examples.
 
 ###################################################LOGIN STUFF######################################################
 #See https://blog.pythonanywhere.com/158/
@@ -107,13 +120,6 @@ class User(UserMixin):
         return self.username
 
 
-#Now lets define some users. Notice that the username and password variables pass into user, which passes into UserMixin
-# We use a dictionary so we can use the functionality of key-value pairing later on.
-all_users = {
-    "admin": User("admin", generate_password_hash("secret")),
-    "bob": User("bob", generate_password_hash("less-secret")),
-    "caroline": User("caroline", generate_password_hash("completely-secret")),
-}
 #Below is the database stuff
 class users(UserMixin, db.Model):
      #This is how you make a new table in SQL Alchemy. It is a table that represents a table in SQL.
@@ -137,10 +143,7 @@ class users(UserMixin, db.Model):
 def load_user(user_id):
     return users.query.get(int(user_id))
 
-#@login_manager.user_loader #This is a decorator, it dynamically updates the login manager class without using a subcass. See https://wiki.python.org/moin/PythonDecorators
-#def load_user(user_id):
-#    return all_users.get(user_id) #All users is a dictionary (key-value pair) and get is a method on dictionaries that selects a key and returns that value.
-                                  #This is how we access the "user" object that has been instatiated and using the above code.
+
 
 @app.route("/login/", methods =["GET", "POST"]) #Allow for post methods (RESTful API stuff)
 def login():
@@ -227,28 +230,20 @@ def home():
 
 
 
-class InputForm(Form):
-    year         = StringField()
-    probe1       = StringField()
-    probe5       = StringField()
-    data         = StringField()
 
 
 
 
 
 
-
-
-@app.route('/dashboard.html') #have this set to be the home page
-#@login_required #makes it so the dashboard can only be seen when logged in
+@app.route('/dashboard.html')
 @login_required #This makes this page require the user to be logged in to see it.
 def dashboard():
 #This is the homepage. Doing experiments. See http://banjolanddesign.com/flask-google-charts.html
             # See https://www.codementor.io/sheena/understanding-sqlalchemy-cheat-sheet-du107lawl
             # See https://www.youtube.com/watch?v=Tu4vRU4lt6k
             #http://flask-sqlalchemy.pocoo.org/2.3/quickstart/
-    chartdata = electron1.query.all() #This returns a lists of dictionaries. Each item in the list is a dictionary (dictionary = key-value pair)
+    chartdata = pipe_sensor.query.all() #This returns a lists of dictionaries. Each item in the list is a dictionary (dictionary = key-value pair)
                                         #The key-value pair can then ben accessed using dot (like chartdata[0].key) noation or ["key"] notation. ( like chartdata[0]["key"])
                                         #The key is always the header to that column.
                                         #Lists can be iterated over, dictionaries can't. However, lists cannot access their items using dot notation.
@@ -262,52 +257,33 @@ def dashboard():
         array_ISO8601.append(items.ISO8601) #use dot notation to only view one column of each row you are iterating over
         #Result is all the other columns are removed and the list now only has one column to it. ``
 
-    array_probe1 = []
+    array_data = []
     for items in chartdata:
-        array_probe1.append(float(str(items.probe1)))
+        array_data.append(float(items.data))
         #Exlpanation on float(str())
         # Recall that javascript stores all numbers as just a 'number'.
         # A number in javascript is always a floating point number. Google charts is javascript,
         # so we need to get the decimals from mysql into a format javascript can understand. The float()
         # function does not work on raw mysql decimals, so first to a string, then to a float. Seems to work
         # pretty well.
-    array_probe2 = []
-    for items in chartdata:
-        array_probe2.append(float(str(items.probe2)))
-
-    array_probe3 = []
-    for items in chartdata:
-        array_probe3.append(float(str(items.probe3)))
-
-    array_probe4 = []
-    for items in chartdata:
-        array_probe4.append(float(str(items.probe4)))
-
-    array_probe5 = []
-    for items in chartdata:
-        array_probe5.append(float(str(items.probe5)))
 
 
-    return render_template('dashboard.html',array_ISO8601=array_ISO8601,array_probe1=array_probe1,array_probe2=array_probe2,array_probe3=array_probe3,array_probe4=array_probe4,array_probe5=array_probe5) #Pass arrays containing columns to the javascript
+
+    return render_template('dashboard.html',array_ISO8601=array_ISO8601,data=array_data) #Pass arrays containing columns to the javascript
 
 
 
 
 @app.route('/input.html', methods = ['GET', 'POST']) #This function is for the particle webhook
 def particle():
-   # form = InputForm(request.form) #for use with human html interface
-    year = 1
+
     if request.method == 'POST':
         webhook = request.form   #see http://flask.pocoo.org/docs/0.12/api/#flask.Request
         data = webhook['data']   #look inside the multidict
+        ISO8601 = webhook['published_at']
 
-        year = year+1
-        probe5 = 10
-        #year = form.year.data #for use with human html interface
-        #probe1=form.probe1.data #for use with human html interface
-        #probe5=form.probe5.data #for use with human html interface
-        #db.engine.execute("INSERT INTO chartdata(year,probe1,probe5) VALUES (%s, %s, %s)",(year, data,probe5)) #for use with human html interface
-        #db.engine.execute("INSERT INTO chartdata(year,probe1, probe5) VALUES (%s, %s, %s)",(year, temp, probe5))
+
+        db.engine.execute("INSERT INTO pipe_sensor(ISO8601,data) VALUES (%s, %s)",(ISO8601, data))
         return redirect(url_for('register'))
 
     return render_template('input.html',data=data)
