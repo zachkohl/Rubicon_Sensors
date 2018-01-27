@@ -19,8 +19,8 @@ app = Flask(__name__) #Starts the flask application, passes into other stuff. Us
 # bcrypt = Bcrypt(app) #use for encryption
 #
 #  #DATABASE: use this stuff for local desktop
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
-db = SQLAlchemy(app)  
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
+#db = SQLAlchemy(app)  
 
 bcrypt = Bcrypt(app) #use for encryption
 
@@ -31,24 +31,20 @@ bcrypt = Bcrypt(app) #use for encryption
 
 
 # DATABASE: use this stuff for deployment on python anywhere
-# SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-#      username="rubiconsensors",
-#      password="wf5PWRM4",
-#      hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-#      databasename="rubiconsensors$riversensedb",
-#  )
+     username="rubiconsensors",
+     password="wf5PWRM4",
+     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+     databasename="rubiconsensors$riversensedb",
+ )
 
-#       username="rubiconsensors",
-#       password="wf5PWRM4",
-#       hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-#       databasename="rubiconsensors$riversensedb",
-#   )
 
-# app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-# app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# db = SQLAlchemy(app)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 #End database deployment
 
 
