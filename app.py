@@ -23,15 +23,9 @@ bcrypt = Bcrypt(app) #use for encryption
 #Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine. 
 
 
-#  #DATABASE: use this stuff for Sam's desktop
+#  #DATABASE: use this stuff for development on a local machine
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
 db = SQLAlchemy(app)  
-
-
-
- #DATABASE: use this stuff for Zach's desktop
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-
 
 
 
