@@ -31,20 +31,20 @@ db = SQLAlchemy(app)
 
 # DATABASE: use this stuff for deployment on python anywhere. 
 
-#sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development. 
-#SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development. 
+SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-#     username="rubiconsensors",
-#     password="wf5PWRM4",
-#     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-#     databasename="rubiconsensors$riversensedb",
-# )
+    username="rubiconsensors",
+     password="wf5PWRM4",
+     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+     databasename="rubiconsensors$riversensedb",
+ )
 
 
-#app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-#app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-#app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-#db = SQLAlchemy(app)
+app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
 #End database deployment
 ########################################END DATABASE STUFF########################################################
