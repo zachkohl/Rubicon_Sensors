@@ -19,6 +19,7 @@ bcrypt = Bcrypt(app) #use for encryption
 
 
 
+
 ####################################################DATABASE STUFF###############################################################
 #Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine. 
 
@@ -29,9 +30,8 @@ bcrypt = Bcrypt(app) #use for encryption
 
 
 
- #DATABASE: use this stuff for Zach's desktop
+#DATABASE: use this stuff for Zach's desktop
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-
 
 
 
@@ -51,6 +51,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
+
 
 #End database deployment
 ########################################END DATABASE STUFF########################################################
