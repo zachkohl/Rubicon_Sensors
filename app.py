@@ -15,42 +15,45 @@ from flask_sslify import SSLify #force HTTPS
 
 
 app = Flask(__name__) #Starts the flask application, passes into other stuff. Used to tie the whole website framework together
-
-# bcrypt = Bcrypt(app) #use for encryption
-#
-#  #DATABASE: use this stuff for local desktop
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
-db = SQLAlchemy(app)  
-
 bcrypt = Bcrypt(app) #use for encryption
 
- #DATABASE: use this stuff for local desktop
+
+
+####################################################DATABASE STUFF###############################################################
+#Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine. 
+
+
+#  #DATABASE: use this stuff for Sam's desktop
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
+#db = SQLAlchemy(app)  
+
+
+
+ #DATABASE: use this stuff for Zach's desktop
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-#db = SQLAlchemy(app)
 
 
 
-# DATABASE: use this stuff for deployment on python anywhere
-# SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-#      username="rubiconsensors",
-#      password="wf5PWRM4",
-#      hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-#      databasename="rubiconsensors$riversensedb",
-#  )
+# DATABASE: use this stuff for deployment on python anywhere. 
 
-#       username="rubiconsensors",
-#       password="wf5PWRM4",
-#       hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-#       databasename="rubiconsensors$riversensedb",
-#   )
+sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development. 
+SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-# app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-# app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# db = SQLAlchemy(app)
+     username="rubiconsensors",
+     password="wf5PWRM4",
+     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+     databasename="rubiconsensors$riversensedb",
+ )
+
+
+app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
+
 #End database deployment
-
+########################################END DATABASE STUFF########################################################
 
 
 #Other database models
