@@ -1,17 +1,26 @@
-
-
-
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-<div class="collapse navbar-collapse" id="navbarsExample10">
-  <div><a class="navbar-brand" href="#">RiverSense</a>
-</div>
+  <a class="navbar-brand" href="#">RiverSense</a>
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample05" aria-controls="navbarsExample05" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
   </button>
+
+  <div class="collapse navbar-collapse" id="navbarsExample05">
+    <ul></ul>
     <ul class="nav navbar-nav"> 
      <li><a href="/">Home</a></li>
-     <li><a href="/login/">Login</a></li>
-     <li><a href="/logout.html">Logout</a></li>
+     <ul></ul>
+     <!-- <li><a href="/login/">Login</a></li>
+     <li><a href="/logout.html">Logout</a></li> -->
     </ul>
+    <!-- This is the session checking login logout link. -->
+    <ul class="nav navbar-nav navbar-right">
+      {% if current_user.is_authenticated %}
+          <li><a href="{{ url_for('logout') }}">Log out</a></li>
+      {% else %}
+          <li><a href="{{ url_for('login') }}">Log in</a></li>
+      {% endif %}
+  </ul>
+
 
 
 
