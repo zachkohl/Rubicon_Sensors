@@ -30,8 +30,13 @@ bcrypt = Bcrypt(app) #use for encryption
 
 
 
+
+#  DATABASE: use this stuff for Zach's desktop
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
+=======
 #DATABASE: use this stuff for Zach's desktop
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
+
 
 
 
