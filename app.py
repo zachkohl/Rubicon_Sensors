@@ -45,11 +45,11 @@ bcrypt = Bcrypt(app) #use for encryption
 sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development. 
 SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-     username="rubiconsensors",
-     password="wf5PWRM4",
-     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-     databasename="rubiconsensors$riversensedb",
- )
+    username="rubiconsensors",
+    password="wf5PWRM4",
+    hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+    databasename="rubiconsensors$riversensedb",
+)
 
 
 app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
@@ -295,7 +295,7 @@ def particle():
         db.engine.execute("INSERT INTO pipe_sensor(ISO8601,data) VALUES (%s, %s)",(ISO8601, data))
         return redirect(url_for('register'))
 
-    return render_template('input.html',data=data)
+    return render_template('input.html')
 
 app.secret_key="jyooGbO0eXelz9lrRQH6f0FL4r57SRM8"
 if __name__ == '__main__':
