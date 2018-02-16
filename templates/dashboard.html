@@ -20,58 +20,85 @@
 
    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
    <script type="text/javascript">
-   google.charts.load('current',{'packages':['corechart']});
-   google.charts.setOnLoadCallback(drawChart);
+   google.charts.load('current',{'packages':['corechart', 'controls']});
+   google.charts.setOnLoadCallback(drawDashboard);
 
+
+
+function drawDashboard() {
 //function prepData is my homemade function that takes the python data and converts it into an array for addrows in Google Charts
-function prepData ()  {
+
+
+function prepData(){
+
 //bring the data in from python
 // must use the | safe to get things to work. The | safe makes it so all the crazy {}))] characters show up right
 array_ISO8601 = {{array_ISO8601 | safe}};
-array_data = {{data | safe}};
-
+   array_data = {{data | safe}};
 row = [] //prep empty array
-for (var i = 0; i < array_ISO8601.length; i++) {
+row[0] = ['Date', 'Liters/Minute']//Create the column headers, must be created before you arrange the data
+for (var i = 1; i < array_ISO8601.length; i++) {//arranging the data with a for-loop
   row[i] = [new Date(array_ISO8601[i]),array_data[i]]
 } //adds the array inside of the array. Recall that the schema is handled elsewhere by addColumn in Google Charts
 return row;
+
 }
+
 prepData(); //Call the function
 
-//below is stuff for the Google chart
-   function drawChart() {
-     // Create the data table.
-     var data = new google.visualization.DataTable();
-     data.addColumn('date', 'time'); //Each column must be specified. Got to give the schema out just like most systems.
-     data.addColumn('number', 'Liters/Minute');
+//creating the Dashboard instance
+var dashboard = new google.visualization.Dashboard(
+  document.getElementById('dashboard_div'))
 
-     //Row is an array of arrays, our list of columns. Put each row as an item in the first array
-    //Then add the column items inside the second array. Each item is in its datatype and is
-   //seperated by a ,.
-   //Row is an array of arrays, our list of columns. Put each row as an item in the first array
-  //Then add the column items inside the second array. Each item is in its datatype and is
-  //seperated by a ,.
+//creating the control instance
+ var fluidRangeSlider = new google.visualization.ControlWrapper({
+   'controlType': 'DateRangeFilter',
+   'containerId': 'filter_div',
+   'options':{
+     'filterColumnLabel':'Date'
+   }
+ })
+
+
+//creating the data for the chart. Pull the data from the 'prepData' function 
+//and place into google arrayToDataTable for use in chart
+var data = new google.visualization.arrayToDataTable(
+  prepData()
+)
+
   // see https://developers.google.com/chart/interactive/docs/gallery/linechart
   //All the work is done in the prepData function up above
-     data.addRows(row)
-     //options is where the consmetics get altered for the chart
-     var options = {'title':'Mock sensor data',
-                    'width':800,
-                    'height':300,
-                    hAxis: {
-                      format: 'M/dd/yy' //Format is tricky, they have a lot of documentation
-                    }
-                  };
 
-     var chart = new google.visualization.LineChart(document.getElementById('curve_chart')); //Prep the chart object
-     chart.draw(data, options); //instantate it with the preped data and the options
-   }
+//below is stuff for the Google chart
+
+//create the chart instance
+     var lineChart = new google.visualization.ChartWrapper({
+          'chartType': 'LineChart',
+          'containerId': 'chart_div',
+          'options': {
+            'width': 300,
+            'height': 300,
+            'ChartDate': 'value',
+            'legend': 'right'
+          }
+        });
+
+//Bind the control instance and the chart instance together within the Dashboard instance
+   dashboard.bind(fluidRangeSlider, lineChart);
+ //Draw the Dashboard instance using the data from 'data' variable, which is using the 
+ //actual data from prepData function, just organized under the google arrayToDataTable format
+   dashboard.draw(data);
+   
+}
+
  </script>
 
 
-<!-- Put the chart in the HTML stream -->
-   <div id="curve_chart" style ="width: 900px; height: 500px"></div>
-
+<!-- Put the three instances (dashboard, control, and chart) into the HTML stream -->
+   <div id="dashboard_div">
+     <div id="filter_div"></div>
+   <div id="chart_div" style ="width: 900px; height: 500px"></div>
+  </div>
 <!-- end chart stuff -->
 
 
@@ -80,16 +107,6 @@ prepData(); //Call the function
 </div>
 </div>
 
-<!-- <div class="jumbotron">
-  <div class="col-sm-8 mx-auto">
-    <h1>Navbar examples</h1>
-    <p>This example is a quick exercise to illustrate how the navbar and its contents work. Some navbars extend the width of the viewport, others are confined within a <code>.container</code>. For positioning of navbars, checkout the <a href="../navbar-top/">top</a> and <a href="../navbar-top-fixed/">fixed top</a> examples.</p>
-    <p>At the smallest breakpoint, the collapse plugin is used to hide the links and show a menu button to toggle the collapsed content.</p>
-    <p>
-      <a class="btn btn-primary" href="../../components/navbar/" role="button">View navbar docs &raquo;</a>
-    </p>
-  </div>
-</div> -->
 
 
 
