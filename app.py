@@ -75,9 +75,9 @@ class Flowsensor(db.Model):
                                  #In Flask-SQLAlchemy, the tablename is just assumed to be the class name. But specifying it won't hurt. 
                                  #Flask-SQLAlchemy will just go with what you specify. See http://flask-sqlalchemy.pocoo.org/2.3/api/?highlight=table#flask_sqlalchemy.Model.__tablename__
 
-    idFlowSensor = Column(Integer, primary_key=True, nullable=False) #should be good
-    Payer_PayerID = Column(ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True) #should be good
-    Address = Column(String(100)) #should be good
+    idFlowSensor = db.Column(db.Integer, primary_key=True, nullable=False) #should be good
+    Payer_PayerID = db.Column(db.ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True) #should be good
+    Address = db.Column(db.String(100)) #should be good
 
     payer = db.relationship('Payer')
     viewer = db.relationship('Viewer', secondary='viewer_has_flowsensor')
@@ -86,10 +86,10 @@ class Flowsensor(db.Model):
 class Flowsensordata(db.Model):
     __tablename__ = 'flowsensordata'
 
-    idFlowSensor = Column(Integer, primary_key=True, nullable=False)
-    ISO8601 = Column(String(100))
-    Data = Column(Integer)
-    FlowSensor_idFlowSensor = Column(ForeignKey('flowsensor.idFlowSensor'), primary_key=True, nullable=False, index=True)
+    idFlowSensor = db.Column(db.Integer, primary_key=True, nullable=False)
+    ISO8601 = db.Column(db.String(100))
+    Data = db.Column(db.Integer)
+    FlowSensor_idFlowSensor = db.Column(db.ForeignKey('flowsensor.idFlowSensor'), primary_key=True, nullable=False, index=True)
 
     flowsensor = db.relationship('Flowsensor')
 
@@ -97,34 +97,34 @@ class Flowsensordata(db.Model):
 class Payer(db.Model):
     __tablename__ = 'payer'
 
-    PayerID = Column(Integer, primary_key=True, unique=True)
-    UserName = Column(String(45))
-    Email = Column(String(90))
-    FirstName = Column(String(45))
-    LastName = Column(String(45))
-    Password = Column(String(100))
-    register_date = Column(String(100))
+    PayerID = db.Column(db.Integer, primary_key=True, unique=True)
+    UserName = db.Column(db.String(45))
+    Email = db.Column(db.String(90))
+    FirstName = db.Column(db.String(45))
+    LastName = db.Column(db.String(45))
+    Password = db.Column(db.String(100))
+    register_date = db.Column(db.String(100))
 
 
 class User(db.Model):
     __tablename__ = 'user'
     __table_args__ = (
-        ForeignKeyConstraint(['Viewer_idViewer', 'Viewer_Payer_PayerID'], ['viewer.idViewer', 'viewer.Payer_PayerID']),
-        Index('fk_User_Viewer1_idx', 'Viewer_idViewer', 'Viewer_Payer_PayerID')
+        db.ForeignKeyConstraint(['Viewer_idViewer', 'Viewer_Payer_PayerID'], ['viewer.idViewer', 'viewer.Payer_PayerID']),
+        db.Index('fk_User_Viewer1_idx', 'Viewer_idViewer', 'Viewer_Payer_PayerID')
     )
 
-    idUser = Column(Integer, primary_key=True, nullable=False)
-    Email = Column(String(45))
-    Name = Column(String(45))
-    FirstName = Column(String(45))
-    LastName = Column(String(45))
-    Address = Column(String(45))
-    Password = Column(String(45))
-    UserName = Column(String(45))
-    Usercol = Column(String(45))
-    Viewer_idViewer = Column(Integer, primary_key=True, nullable=False)
-    Viewer_Payer_PayerID = Column(Integer, primary_key=True, nullable=False)
-    Payer_PayerID = Column(ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True)
+    idUser = db.Column(db.Integer, primary_key=True, nullable=False)
+    Email = db.Column(db.String(45))
+    Name = db.Column(db.String(45))
+    FirstName = db.Column(db.String(45))
+    LastName = db.Column(db.String(45))
+    Address = db.Column(db.String(45))
+    Password = db.Column(db.String(45))
+    UserName = db.Column(db.String(45))
+    Usercol = db.Column(db.String(45))
+    Viewer_idViewer = db.Column(db.Integer, primary_key=True, nullable=False)
+    Viewer_Payer_PayerID = db.Column(db.Integer, primary_key=True, nullable=False)
+    Payer_PayerID = db.Column(db.ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True)
 
     payer = db.relationship('Payer')
     viewer = db.relationship('Viewer')
@@ -142,21 +142,21 @@ class User(db.Model):
 class Viewer(db.Model):
     __tablename__ = 'viewer'
 
-    idViewer = Column(Integer, primary_key=True, nullable=False)
-    PayerID = Column(Integer)
-    Login = Column(String(45))
-    FirstName = Column(String(45))
-    LastName = Column(String(45))
-    Email = Column(String(90))
-    Payer_PayerID = Column(ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True)
+    idViewer = db.Column(db.Integer, primary_key=True, nullable=False)
+    PayerID = db.Column(db.Integer)
+    Login = db.Column(db.String(45))
+    FirstName = db.Column(db.String(45))
+    LastName = db.Column(db.String(45))
+    Email = db.Column(db.String(90))
+    Payer_PayerID = db.Column(db.ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True)
 
     payer = db.relationship('Payer')
 
 #This is how one sets up a many to many intermediate table. They use a different command (table). See http://flask-sqlalchemy.pocoo.org/2.3/models/#many-to-many-relationships
 t_viewer_has_flowsensor = db.Table(
-    'viewer_has_flowsensor', metadata,
-    Column('Viewer_idViewer', ForeignKey('viewer.idViewer'), primary_key=True, nullable=False, index=True),
-    Column('FlowSensor_idFlowSensor', ForeignKey('flowsensor.idFlowSensor'), primary_key=True, nullable=False, index=True)
+    'viewer_has_flowsensor', db.metadata,
+    db.Column('Viewer_idViewer', db.ForeignKey('viewer.idViewer'), primary_key=True, nullable=False, index=True),
+    db.Column('FlowSensor_idFlowSensor', db.ForeignKey('flowsensor.idFlowSensor'), primary_key=True, nullable=False, index=True)
 )
 #bet "metadata" above will cause problems. 
 
@@ -172,7 +172,7 @@ t_viewer_has_flowsensor = db.Table(
 #                                #We pass in db.model because that will turn the class into something that SQLAlchemy can use SPECIAL TO FLASK SQLALCHEMY
 #                                #Recall  db = SQLAlchemy(app)
 #     __tablename__ = "pipe_sensor" #The name of the actual SQL table that this local python class is going to represent
-#     id = db.Column('id', db.Integer, primary_key=True) #Describes the first column.
+#     id = db.Column('id', db.Integer, primary_key=True) #Describes the first db.Column.
 #                                                                 #Input arguments are the column name, what the datatype is, and if it is a primary key
 #                                                                 #Don't have to worry about auto imcrement normally because SQL does that automatically. See http://docs.sqlalchemy.org/en/latest/core/metadata.html#sqlalchemy.schema.Column.params.onupdate
 
