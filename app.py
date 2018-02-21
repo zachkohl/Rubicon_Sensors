@@ -19,48 +19,59 @@ bcrypt = Bcrypt(app) #use for encryption
 
 
 
-
 ####################################################DATABASE STUFF###############################################################
 #Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine. 
 
-
-#  #DATABASE: use this stuff for Sam's desktop
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
-# db = SQLAlchemy(app)  
-
+#  #DATABASE: use this stuff for Zach's local desktop
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
+db = SQLAlchemy(app)
 
 
-
-#  DATABASE: use this stuff for Zach's desktop
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-#=======
-#DATABASE: use this stuff for Zach's desktop
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-
+#  #DATABASE: use this stuff for development on Sam's local desktop
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
+#db = SQLAlchemy(app)  
 
 
 
 # DATABASE: use this stuff for deployment on python anywhere. 
 
-sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development. 
-SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+#sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development. 
+#SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-    username="rubiconsensors",
-    password="wf5PWRM4",
-    hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-    databasename="rubiconsensors$riversensedb",
-)
+#     username="rubiconsensors",
+#     password="wf5PWRM4",
+#     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+#     databasename="rubiconsensors$riversensedb",
+# )
 
 
-app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
-
+#app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+#app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+#app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+#db = SQLAlchemy(app)
 
 #End database deployment
 ########################################END DATABASE STUFF########################################################
+####Experments####
+class test(db.Model): #The name is the name from the SQL database. This is not about setting up a SQL database!
+                               #It is about creating a local model of the far away SQL database
+                               #We pass in db.model because that will turn the class into something that SQLAlchemy can use SPECIAL TO FLASK SQLALCHEMY
+                               #Recall  db = SQLAlchemy(app)
+    __tablename__ = "test" #The name of the actual SQL table that this local python class is going to represent
+    id = db.Column('id', db.Integer, primary_key=True) #Describes the first column.
+                                                                #Input arguments are the column name, what the datatype is, and if it is a primary key
+                                                                #Don't have to worry about auto imcrement normally because SQL does that automatically. See http://docs.sqlalchemy.org/en/latest/core/metadata.html#sqlalchemy.schema.Column.params.onupdate
 
+    ISO8601 = db.Column('ISO8601', db.String)                   #descriptions of the other columns, for explanation of legal data types, see https://dev.mysql.com/doc/refman/5.7/en/numeric-types.html
+                                                                #Recall also that this is flask-SQLAlchemy, so google the docs for more info.
+    data = db.Column('data', db.Integer)
+    timestamp = db.Column('timestamp', db.String)
+
+    #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
+    # or whatever we name it. Things like pipe_sensor.query.all() See functions for use examples.
+    db.create_all()
+
+    ###END EXPERMENTS#######
 
 #Other database models
     #Create a model of the database for use in python
@@ -295,7 +306,7 @@ def particle():
         db.engine.execute("INSERT INTO pipe_sensor(ISO8601,data) VALUES (%s, %s)",(ISO8601, data))
         return redirect(url_for('register'))
 
-    return render_template('input.html')
+    return render_template('input.html',data=data)
 
 app.secret_key="jyooGbO0eXelz9lrRQH6f0FL4r57SRM8"
 if __name__ == '__main__':
