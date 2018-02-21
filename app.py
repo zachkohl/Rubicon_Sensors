@@ -61,20 +61,23 @@ db = SQLAlchemy(app)
 #End database deployment
 #######################################SQLACODEGEN STUFF############################################################
 
+
 #This is all the sqlacodegen stuff Zach and Sam created.
 #You can use this DB (i.e. the slqacodegen stuff) or the one below it. Just be sure to comment out whichever one you are not using.
 #The sqlacodegen created here is from pip install sqlacodegen, due to the flask-sqlacodegen running into an internal file error. 
-#
-db.Model = declarative_db.Model()
-metadata = db.Model.metadata
 
 
+#So, these are all the classes we need for our flask SQLAlchemy. Basically these act as maps to what is actually in the database. 
+#Flask-SQLAlchemy kind of flies blind, so we need to set good instructions for dead reconing. 
+#Note, Flask-SQLAchemy is a lot smarter than plain old SQLAlchemy, so many things can be improved. 
 class Flowsensor(db.Model):
-    __tablename__ = 'flowsensor'
+    __tablename__ = 'flowsensor' #This parameter is handled automatically by Flask-SQLAlchemy. We have it here for historical purposes.
+                                 #In Flask-SQLAlchemy, the tablename is just assumed to be the class name. But specifying it won't hurt. 
+                                 #Flask-SQLAlchemy will just go with what you specify. See http://flask-sqlalchemy.pocoo.org/2.3/api/?highlight=table#flask_sqlalchemy.Model.__tablename__
 
-    idFlowSensor = Column(Integer, primary_key=True, nullable=False)
-    Payer_PayerID = Column(ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True)
-    Address = Column(String(100))
+    idFlowSensor = Column(Integer, primary_key=True, nullable=False) #should be good
+    Payer_PayerID = Column(ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True) #should be good
+    Address = Column(String(100)) #should be good
 
     payer = db.relationship('Payer')
     viewer = db.relationship('Viewer', secondary='viewer_has_flowsensor')
@@ -126,6 +129,15 @@ class User(db.Model):
     payer = db.relationship('Payer')
     viewer = db.relationship('Viewer')
 
+#This should have **kwargs added. https://stackoverflow.com/questions/3394835/args-and-kwargs#3394898
+#see flask-SQLAlchemy documentation 
+    def __init__(self, username, email,password):
+        self.username = username
+        self.email = email
+        self.password = password
+
+    def __repr__(self):
+        return '<User %r>' % self.username
 
 class Viewer(db.Model):
     __tablename__ = 'viewer'
@@ -140,21 +152,14 @@ class Viewer(db.Model):
 
     payer = db.relationship('Payer')
 
-
-t_viewer_has_flowsensor = Table(
+#This is how one sets up a many to many intermediate table. They use a different command (table). See http://flask-sqlalchemy.pocoo.org/2.3/models/#many-to-many-relationships
+t_viewer_has_flowsensor = db.Table(
     'viewer_has_flowsensor', metadata,
     Column('Viewer_idViewer', ForeignKey('viewer.idViewer'), primary_key=True, nullable=False, index=True),
     Column('FlowSensor_idFlowSensor', ForeignKey('flowsensor.idFlowSensor'), primary_key=True, nullable=False, index=True)
 )
+#bet "metadata" above will cause problems. 
 
-
-    def __init__(self, username, email,password):
-        self.username = username
-        self.email = email
-        self.password = password
-
-    def __repr__(self):
-        return '<User %r>' % self.username
 
 ########################################END DATABASE STUFF########################################################
 
