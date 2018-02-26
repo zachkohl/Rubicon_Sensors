@@ -9,7 +9,7 @@ from flask.ext.bcrypt import Bcrypt, generate_password_hash, check_password_hash
 import gviz_api #google chart api
 from flask_sslify import SSLify #force HTTPS
 from flask_httpauth import HTTPBasicAuth #Import httpAuth for android login
-
+import json
 
 
 
@@ -304,17 +304,35 @@ def particle():
 
 auth = HTTPBasicAuth()
 
-@auth.verify_password
+@auth.verify_password #https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/examples/basic_auth.py
 def verify_password(username,password):
     user = users.query.filter_by(username = username).first() #Do a database query of the username
-        if user:
-            #If the user object got created by the database, then do this stuff
+    if user:
+        #If the user object got created by the database, then do this stuff
             return check_password_hash( user.password, password)  
-        else:
-            return false
-    return false
+    else:
+        return False
+    return False
+
+@app.route('/api')
+@auth.login_required
+def index():
+    chartdata = pipe_sensor.query.all()
 
 
+
+
+    array_ISO8601 = [] 
+    for items in chartdata: 
+        array_ISO8601.append(items.ISO8601)       
+    array_data = []
+    for items in chartdata:
+        array_data.append(float(items.data))
+    
+    
+        apiData = json.dumps(dict(zip(array_ISO8601,array_data)))
+    #return "Hello, %s!" % auth.username()
+    return apiData
 
 
 
