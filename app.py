@@ -6,7 +6,7 @@ from werkzeug.security import check_password_hash, generate_password_hash #don't
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
 from flask.ext.bcrypt import Bcrypt, generate_password_hash, check_password_hash
 # from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-import gviz_api #google chart api
+#import gviz_api #google chart api
 from flask_sslify import SSLify #force HTTPS
 from flask_httpauth import HTTPBasicAuth #Import httpAuth for android login
 import json
@@ -22,12 +22,12 @@ bcrypt = Bcrypt(app) #use for encryption
 
 
 ####################################################DATABASE STUFF###############################################################
-#Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine. 
+#Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine.
 
 
 #  #DATABASE: use this stuff for Sam's desktop
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
-# db = SQLAlchemy(app)  
+# db = SQLAlchemy(app)
 
 
 
@@ -36,27 +36,27 @@ bcrypt = Bcrypt(app) #use for encryption
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
 #=======
 #DATABASE: use this stuff for Zach's desktop
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-db = SQLAlchemy(app)  
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
+#db = SQLAlchemy(app)
 
 
 
-# DATABASE: use this stuff for deployment on python anywhere. 
+# DATABASE: use this stuff for deployment on python anywhere.
 
-# sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development. 
-# SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development.
+SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-#     username="rubiconsensors",
-#     password="wf5PWRM4",
-#     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-#     databasename="rubiconsensors$riversensedb",
-# )
+    username="rubiconsensors",
+    password="wf5PWRM4",
+    hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+    databasename="rubiconsensors$riversensedb",
+)
 
 
-# app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-# app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# db = SQLAlchemy(app)
+app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
 
 #End database deployment
@@ -66,9 +66,9 @@ db = SQLAlchemy(app)
 #Other database models
     #Create a model of the database for use in python
 class pipe_sensor(db.Model): #The name is the name from the SQL database. This is not about setting up a SQL database!
-                               #It is about creating a local model of the far away SQL database
-                               #We pass in db.model because that will turn the class into something that SQLAlchemy can use SPECIAL TO FLASK SQLALCHEMY
-                               #Recall  db = SQLAlchemy(app)
+                              #It is about creating a local model of the far away SQL database
+                              #We pass in db.model because that will turn the class into something that SQLAlchemy can use SPECIAL TO FLASK SQLALCHEMY
+                              #Recall  db = SQLAlchemy(app)
     __tablename__ = "pipe_sensor" #The name of the actual SQL table that this local python class is going to represent
     id = db.Column('id', db.Integer, primary_key=True) #Describes the first column.
                                                                 #Input arguments are the column name, what the datatype is, and if it is a primary key
@@ -82,10 +82,10 @@ class pipe_sensor(db.Model): #The name is the name from the SQL database. This i
     #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
     # or whatever we name it. Things like pipe_sensor.query.all() See functions for use examples.
 
-###################################################LOGIN STUFF######################################################
-#See https://blog.pythonanywhere.com/158/
+# ###################################################LOGIN STUFF######################################################
+# #See https://blog.pythonanywhere.com/158/
 
-#Step 1, make sure secrete key is inplace, ours is at the bottom of this document
+# #Step 1, make sure secrete key is inplace, ours is at the bottom of this document
 
 login_manager = LoginManager() #Create an instance of Flask-Login
 login_manager.init_app(app) #Associate the instance with the fask app
@@ -99,10 +99,10 @@ class LoginForm(Form):
     username     = StringField('Username', [validators.Required()])
     password     = PasswordField('Password', [validators.Required()])
 
-#Create user class that will tell us something about the users
+# #Create user class that will tell us something about the users
 
 class User(UserMixin):
- #By passing in the "UserMixin" we inherit all the abilities of the UserMixin class
+#By passing in the "UserMixin" we inherit all the abilities of the UserMixin class
 #Page 408-409 in the python book explains this really well.
 #The "User" class can now use all the properties and methods of the UserMixin superclass
 
@@ -118,6 +118,7 @@ class User(UserMixin):
     #Self can now be used inside the class to refer to the object itself. This is just special notation
     #that has to be this way because of the way python is set up.
     def __init__(self, username, password_hash):
+
         self.username = username
         self.password_hash = password_hash
 
@@ -130,7 +131,7 @@ class User(UserMixin):
         return self.username
 
 
-#Below is the database stuff
+# #Below is the database stuff
 class users(UserMixin, db.Model):
      #This is how you make a new table in SQL Alchemy. It is a table that represents a table in SQL.
      #See https://www.pythoncentral.io/introductory-tutorial-python-sqlalchemy/
@@ -182,31 +183,31 @@ def login():
             return redirect(url_for('login'))
 
     return render_template('login.html', form=form)
-    #
-    # if request.method == "GET":
-    #     return render_template("login.html", error=False) #This if statement says just load the page if all they want to do is see it (GET method)
-    #
-    # username = request.form["username"] #The form method is part of the POST method. This line of code just puts the username value from the form
-    #                                     #(I think it is another dictionary) into a more usable variable
-    # if username not in all_users:
-    #     #This if statement checks if the username from the form is in the all_users dictionary. If it is not, it loads the page but turns the error flag to true.
-    #     return render_template("login.html", error=True)
-    # user = all_users[username] #This pulls out (creates a specific copy) of the correct user object stored in all users that corresponds to the inputed username
-    #                            #Note this local object has a LOWERCASE! The class has an uppercase.
-    #
-    # if not user.check_password(request.form["password"]):
-    #     #The if not checks for true/false. Recall the check_password method was created earlier when we defined the user subclass of the UserMixin Superclass.
-    #     #It takes the password from the form (sumitted by POST) and passes it into the check_password method. Returns true or false becuase that is what the check_password_hash
-    #     #method does. We imported check_password_hash from a library.
-    #     return redirect('/dashboard.html') #render_template("login_page.html", error=True) #IF the user.check_password is NOT true (bad password), send them back to the template with the error flag raised.
-    #
-    # login_user(user)
-    #
-    # #If we make it to this line without sending the user off with a "return" which I think ends the function, we get to use the library imported login_user object.
-    #                  #Pass the user object into it so it logs in the right person.
-    # return redirect('/')
-    # #Now that the individual is logged in, send them off to user logged in land (the dashboard).
-    #                                   #Using dashboard.html is a slight variation from the instructions.
+
+    if request.method == "GET":
+        return render_template("login.html", error=False) #This if statement says just load the page if all they want to do is see it (GET method)
+
+    username = request.form["username"] #The form method is part of the POST method. This line of code just puts the username value from the form
+                                        #(I think it is another dictionary) into a more usable variable
+    if username not in all_users:
+        #This if statement checks if the username from the form is in the all_users dictionary. If it is not, it loads the page but turns the error flag to true.
+        return render_template("login.html", error=True)
+    user = all_users[username] #This pulls out (creates a specific copy) of the correct user object stored in all users that corresponds to the inputed username
+                                #Note this local object has a LOWERCASE! The class has an uppercase.
+
+    if not user.check_password(request.form["password"]):
+        #The if not checks for true/false. Recall the check_password method was created earlier when we defined the user subclass of the UserMixin Superclass.
+        #It takes the password from the form (sumitted by POST) and passes it into the check_password method. Returns true or false becuase that is what the check_password_hash
+        #method does. We imported check_password_hash from a library.
+        return redirect('/dashboard.html') #render_template("login_page.html", error=True) #IF the user.check_password is NOT true (bad password), send them back to the template with the error flag raised.
+
+    login_user(user)
+
+    #If we make it to this line without sending the user off with a "return" which I think ends the function, we get to use the library imported login_user object.
+                     #Pass the user object into it so it logs in the right person.
+    return redirect('/')
+    #Now that the individual is logged in, send them off to user logged in land (the dashboard).
+                                      #Using dashboard.html is a slight variation from the instructions.
 
 #The register function is very similar to login. But it stores into a database rather than doing a query.
 @app.route('/register.html', methods = [ "GET", "POST"])
@@ -228,7 +229,7 @@ def logout():
     logout_user()
     return render_template('logout.html')
 
-###################################################END LOGIN STUFF##################################################
+# ###################################################END LOGIN STUFF##################################################
 
 
 
@@ -309,7 +310,7 @@ def verify_password(username,password):
     user = users.query.filter_by(username = username).first() #Do a database query of the username
     if user:
         #If the user object got created by the database, then do this stuff
-            return check_password_hash( user.password, password)  
+            return check_password_hash( user.password, password)
     else:
         return False
     return False
@@ -322,14 +323,14 @@ def index():
 
 
 
-    array_ISO8601 = [] 
-    for items in chartdata: 
-        array_ISO8601.append(items.ISO8601)       
+    array_ISO8601 = []
+    for items in chartdata:
+        array_ISO8601.append(items.ISO8601)
     array_data = []
     for items in chartdata:
         array_data.append(float(items.data))
-    
-    
+
+
         apiData = json.dumps(dict(zip(array_ISO8601,array_data)))
     #return "Hello, %s!" % auth.username()
     return apiData
