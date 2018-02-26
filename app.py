@@ -8,7 +8,8 @@ from flask.ext.bcrypt import Bcrypt, generate_password_hash, check_password_hash
 # from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 import gviz_api #google chart api
 from flask_sslify import SSLify #force HTTPS
-
+from flask_httpauth import HTTPBasicAuth #Import httpAuth for android login
+import json
 
 
 
@@ -35,27 +36,27 @@ bcrypt = Bcrypt(app) #use for encryption
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
 #=======
 #DATABASE: use this stuff for Zach's desktop
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
-
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
+db = SQLAlchemy(app)  
 
 
 
 # DATABASE: use this stuff for deployment on python anywhere. 
 
-sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development. 
-SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+# sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development. 
+# SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-    username="rubiconsensors",
-    password="wf5PWRM4",
-    hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-    databasename="rubiconsensors$riversensedb",
-)
+#     username="rubiconsensors",
+#     password="wf5PWRM4",
+#     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+#     databasename="rubiconsensors$riversensedb",
+# )
 
 
-app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
+# app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+# app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# db = SQLAlchemy(app)
 
 
 #End database deployment
@@ -297,7 +298,62 @@ def particle():
 
     return render_template('input.html')
 
+###################################           ANDROID APP                   #####################################
+
+#See the docs at https://flask-httpauth.readthedocs.io/en/latest/
+
+auth = HTTPBasicAuth()
+
+@auth.verify_password #https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/examples/basic_auth.py
+def verify_password(username,password):
+    user = users.query.filter_by(username = username).first() #Do a database query of the username
+    if user:
+        #If the user object got created by the database, then do this stuff
+            return check_password_hash( user.password, password)  
+    else:
+        return False
+    return False
+
+@app.route('/api')
+@auth.login_required
+def index():
+    chartdata = pipe_sensor.query.all()
+
+
+
+
+    array_ISO8601 = [] 
+    for items in chartdata: 
+        array_ISO8601.append(items.ISO8601)       
+    array_data = []
+    for items in chartdata:
+        array_data.append(float(items.data))
+    
+    
+        apiData = json.dumps(dict(zip(array_ISO8601,array_data)))
+    #return "Hello, %s!" % auth.username()
+    return apiData
+
+
+
+
+
+
+
+
+
+
 app.secret_key="jyooGbO0eXelz9lrRQH6f0FL4r57SRM8"
 if __name__ == '__main__':
 
     app.run(debug=True)
+
+
+
+
+
+
+
+
+
+
