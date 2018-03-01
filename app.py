@@ -60,27 +60,131 @@ db = SQLAlchemy(app)
 
 
 #End database deployment
+#######################################SQLACODEGEN STUFF############################################################
+
+
+#This is all the sqlacodegen stuff Zach and Sam created.
+#You can use this DB (i.e. the slqacodegen stuff) or the one below it. Just be sure to comment out whichever one you are not using.
+#The sqlacodegen created here is from pip install sqlacodegen, due to the flask-sqlacodegen running into an internal file error. 
+
+
+#So, these are all the classes we need for our flask SQLAlchemy. Basically these act as maps to what is actually in the database. 
+#Flask-SQLAlchemy kind of flies blind, so we need to set good instructions for dead reconing. 
+#Note, Flask-SQLAchemy is a lot smarter than plain old SQLAlchemy, so many things can be improved. 
+class Flowsensor(db.Model):
+    __tablename__ = 'flowsensor' #This parameter is handled automatically by Flask-SQLAlchemy. We have it here for historical purposes.
+                                 #In Flask-SQLAlchemy, the tablename is just assumed to be the class name. But specifying it won't hurt. 
+                                 #Flask-SQLAlchemy will just go with what you specify. See http://flask-sqlalchemy.pocoo.org/2.3/api/?highlight=table#flask_sqlalchemy.Model.__tablename__
+
+    idFlowSensor = db.Column(db.Integer, primary_key=True, nullable=False) #should be good
+    Payer_PayerID = db.Column(db.ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True) #should be good
+    Address = db.Column(db.String(100)) #should be good
+
+    payer = db.relationship('Payer')
+    viewer = db.relationship('Viewer', secondary='viewer_has_flowsensor')
+
+
+class Flowsensordata(db.Model):
+    __tablename__ = 'flowsensordata'
+
+    idFlowSensor = db.Column(db.Integer, primary_key=True, nullable=False)
+    ISO8601 = db.Column(db.String(100))
+    Data = db.Column(db.Integer)
+    FlowSensor_idFlowSensor = db.Column(db.ForeignKey('flowsensor.idFlowSensor'), primary_key=True, nullable=False, index=True)
+
+    flowsensor = db.relationship('Flowsensor')
+
+
+class Payer(db.Model):
+    __tablename__ = 'payer'
+
+    PayerID = db.Column(db.Integer, primary_key=True, unique=True)
+    UserName = db.Column(db.String(45))
+    Email = db.Column(db.String(90))
+    FirstName = db.Column(db.String(45))
+    LastName = db.Column(db.String(45))
+    Password = db.Column(db.String(100))
+    register_date = db.Column(db.String(100))
+
+
+class User(db.Model):
+    __tablename__ = 'user'
+    __table_args__ = (
+        db.ForeignKeyConstraint(['Viewer_idViewer', 'Viewer_Payer_PayerID'], ['viewer.idViewer', 'viewer.Payer_PayerID']),
+        db.Index('fk_User_Viewer1_idx', 'Viewer_idViewer', 'Viewer_Payer_PayerID')
+    )
+
+    idUser = db.Column(db.Integer, primary_key=True, nullable=False)
+    Email = db.Column(db.String(45))
+    Name = db.Column(db.String(45))
+    FirstName = db.Column(db.String(45))
+    LastName = db.Column(db.String(45))
+    Address = db.Column(db.String(45))
+    Password = db.Column(db.String(45))
+    UserName = db.Column(db.String(45))
+    Usercol = db.Column(db.String(45))
+    Viewer_idViewer = db.Column(db.Integer, primary_key=True, nullable=False)
+    Viewer_Payer_PayerID = db.Column(db.Integer, primary_key=True, nullable=False)
+    Payer_PayerID = db.Column(db.ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True)
+
+    payer = db.relationship('Payer')
+    viewer = db.relationship('Viewer')
+
+#This should have **kwargs added. https://stackoverflow.com/questions/3394835/args-and-kwargs#3394898
+#see flask-SQLAlchemy documentation 
+    def __init__(self, username, email,password):
+        self.username = username
+        self.email = email
+        self.password = password
+
+    def __repr__(self):
+        return '<User %r>' % self.username
+
+class Viewer(db.Model):
+    __tablename__ = 'viewer'
+
+    idViewer = db.Column(db.Integer, primary_key=True, nullable=False)
+    PayerID = db.Column(db.Integer)
+    Login = db.Column(db.String(45))
+    FirstName = db.Column(db.String(45))
+    LastName = db.Column(db.String(45))
+    Email = db.Column(db.String(90))
+    Payer_PayerID = db.Column(db.ForeignKey('payer.PayerID'), primary_key=True, nullable=False, index=True)
+
+    payer = db.relationship('Payer')
+
+#This is how one sets up a many to many intermediate table. They use a different command (table). See http://flask-sqlalchemy.pocoo.org/2.3/models/#many-to-many-relationships
+t_viewer_has_flowsensor = db.Table(
+    'viewer_has_flowsensor', db.metadata,
+    db.Column('Viewer_idViewer', db.ForeignKey('viewer.idViewer'), primary_key=True, nullable=False, index=True),
+    db.Column('FlowSensor_idFlowSensor', db.ForeignKey('flowsensor.idFlowSensor'), primary_key=True, nullable=False, index=True)
+)
+#bet "metadata" above will cause problems. 
+
+
 ########################################END DATABASE STUFF########################################################
 
 
-#Other database models
-    #Create a model of the database for use in python
-class pipe_sensor(db.Model): #The name is the name from the SQL database. This is not about setting up a SQL database!
-                              #It is about creating a local model of the far away SQL database
-                              #We pass in db.model because that will turn the class into something that SQLAlchemy can use SPECIAL TO FLASK SQLALCHEMY
-                              #Recall  db = SQLAlchemy(app)
-    __tablename__ = "pipe_sensor" #The name of the actual SQL table that this local python class is going to represent
-    id = db.Column('id', db.Integer, primary_key=True) #Describes the first column.
-                                                                #Input arguments are the column name, what the datatype is, and if it is a primary key
-                                                                #Don't have to worry about auto imcrement normally because SQL does that automatically. See http://docs.sqlalchemy.org/en/latest/core/metadata.html#sqlalchemy.schema.Column.params.onupdate
 
-    ISO8601 = db.Column('ISO8601', db.String)                   #descriptions of the other columns, for explanation of legal data types, see https://dev.mysql.com/doc/refman/5.7/en/numeric-types.html
-                                                                #Recall also that this is flask-SQLAlchemy, so google the docs for more info.
-    data = db.Column('data', db.Integer)
-    timestamp = db.Column('timestamp', db.String)
 
-    #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
-    # or whatever we name it. Things like pipe_sensor.query.all() See functions for use examples.
+# #Other database models
+#     #Create a model of the database for use in python
+# class pipe_sensor(db.Model): #The name is the name from the SQL database. This is not about setting up a SQL database!
+#                                #It is about creating a local model of the far away SQL database
+#                                #We pass in db.model because that will turn the class into something that SQLAlchemy can use SPECIAL TO FLASK SQLALCHEMY
+#                                #Recall  db = SQLAlchemy(app)
+#     __tablename__ = "pipe_sensor" #The name of the actual SQL table that this local python class is going to represent
+#     id = db.Column('id', db.Integer, primary_key=True) #Describes the first db.Column.
+#                                                                 #Input arguments are the column name, what the datatype is, and if it is a primary key
+#                                                                 #Don't have to worry about auto imcrement normally because SQL does that automatically. See http://docs.sqlalchemy.org/en/latest/core/metadata.html#sqlalchemy.schema.Column.params.onupdate
+
+#     ISO8601 = db.Column('ISO8601', db.String)                   #descriptions of the other columns, for explanation of legal data types, see https://dev.mysql.com/doc/refman/5.7/en/numeric-types.html
+#                                                                 #Recall also that this is flask-SQLAlchemy, so google the docs for more info.
+#     data = db.Column('data', db.Integer)
+#     timestamp = db.Column('timestamp', db.String)
+
+#     #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
+#     # or whatever we name it. Things like pipe_sensor.query.all() See functions for use examples.
 
 # ###################################################LOGIN STUFF######################################################
 # #See https://blog.pythonanywhere.com/158/
@@ -113,7 +217,7 @@ class User(UserMixin):
     #The __init__ is called aa constructor. We can only have one per class. Page 372 in the book
     #talks about this. This is a special function that will be called as soon as the "User" object
     #is created.
-    #Within the parantheses, the first parameter must be a reference to teh object itself. By convention
+    #Within the parantheses, the first parameter must be a reference to the object itself. By convention
     #this is named "self."
     #Self can now be used inside the class to refer to the object itself. This is just special notation
     #that has to be this way because of the way python is set up.
