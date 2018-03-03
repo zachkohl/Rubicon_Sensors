@@ -214,7 +214,7 @@ def login():
                 #Like check the password
                 #And log in the user
                 login_user(user)
-                return redirect(url_for('dashboard'))
+                return redirect(url_for('sensorlist'))
             else:
                 #flash('password failed')
                 return redirect(url_for('login'))
