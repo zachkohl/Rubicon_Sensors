@@ -21,7 +21,7 @@
 
 <ul class'list-group'>
     {% for sensor in sensors %}
-    <li><a href="{{sensor.location}}" class="list-group-item">{{sensor.location}}</a></li>
+    <li><a href="{{sensor.location + ".html"}}" class="list-group-item">{{sensor.location}}</a></li>
     {% else %}
     <li>No sensors registered</li>
     {% endfor %}

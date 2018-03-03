@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect, flash
+from flask import Flask, render_template, request, url_for, redirect, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
@@ -10,7 +10,7 @@ import gviz_api #google chart api
 from flask_sslify import SSLify #force HTTPS
 from flask_httpauth import HTTPBasicAuth #Import httpAuth for android login
 import json
-
+import requests #for interacting with Particle API
 
 
 
@@ -276,6 +276,10 @@ def newSensor():
         newSensor.viewers.append(current_user)
         db.session.commit() #Push it to the database
         
+        #Particle API 
+
+
+
         return redirect(url_for('newSensor'))
     return render_template('newSensor.html', form= form) 
 
@@ -283,11 +287,12 @@ def newSensor():
 ################################################  LIST OF SENSORS       ##########################################
 @app.route('/sensors.html')
 def sensorlist():
-    sensors = current_user.owners
+    myListOfSensors = current_user.owners
     
  
-    test ='this is a test'
-    return render_template('sensors.html',sensors=sensors,test = test)
+    x = requests.get('https://api.github.com/events')
+    test = jsonify(x.json())
+    return render_template('sensors.html',sensors=myListOfSensors,test = test)
 
 ################################################DISPLAY SENSOR DATA###################################################
 
