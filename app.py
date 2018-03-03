@@ -33,11 +33,11 @@ bcrypt = Bcrypt(app) #use for encryption
 
 
 #  DATABASE: use this stuff
- for Zach's desktop
+# for Zach's desktop
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
 #=======
 #DATABASE: use this stuff for Zach's desktop
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-7'
 db = SQLAlchemy(app)  
 
 
@@ -66,30 +66,25 @@ db = SQLAlchemy(app)
 
 #RIVERSENSE TABLE
     #Create a model of the database for use in python
-class pipe_sensor(db.Model): #The name is the name from the SQL database. This is not about setting up a SQL database!
+class Data(db.Model): #The name is the name from the SQL database. This is not about setting up a SQL database!
                                #It is about creating a local model of the far away SQL database
                                #We pass in db.model because that will turn the class into something that SQLAlchemy can use SPECIAL TO FLASK SQLALCHEMY
                                #Recall  db = SQLAlchemy(app)
-    __tablename__ = "pipe_sensor" #The name of the actual SQL table that this local python class is going to represent
     id = db.Column('id', db.Integer, primary_key=True) #Describes the first column.
                                                                 #Input arguments are the column name, what the datatype is, and if it is a primary key
                                                                 #Don't have to worry about auto imcrement normally because SQL does that automatically. See http://docs.sqlalchemy.org/en/latest/core/metadata.html#sqlalchemy.schema.Column.params.onupdate
-
-    ISO8601 = db.Column('ISO8601', db.String)                   #descriptions of the other columns, for explanation of legal data types, see https://dev.mysql.com/doc/refman/5.7/en/numeric-types.html
+    sensors = db.Column('sensors', db.Integer,db.ForeignKey('sensors.id'), primary_key=True)
+    ISO8601 = db.Column('ISO8601', db.String(80))                   #descriptions of the other columns, for explanation of legal data types, see https://dev.mysql.com/doc/refman/5.7/en/numeric-types.html
                                                                 #Recall also that this is flask-SQLAlchemy, so google the docs for more info.
     data = db.Column('data', db.Integer)
-    timestamp = db.Column('timestamp', db.String)
-    sensorID = db.Column('sensorID', db.String,db.ForeignKey('owner.id')) #This is the name of the Sensor
+    timestamp = db.Column('timestamp', db.String(80))
+    
+    #ownerID = db.Column('ownerID', db.Integer,db.ForeignKey('owner.id')) #This is the name of the Sensor
 
     #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
     # or whatever we name it. Things like pipe_sensor.query.all() See functions for use examples.
 
-#OWNER TABLE
 
-class owner(db.Model): #Creates table named owner
-    id = db.Column('id', db.Integer,primary_key=True)
-    username = db.relationship('users',backref='owner', lazy=True)
-    sensorID= db.Column(db.String(120), unique=True)
 
 
 
@@ -98,14 +93,16 @@ class users(UserMixin, db.Model):
      #This is how you make a new table in SQL Alchemy. It is a table that represents a table in SQL.
      #See https://www.pythoncentral.io/introductory-tutorial-python-sqlalchemy/
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80),db.ForeignKey('owner.id'), unique=True) #https://www.w3schools.com/sql/sql_foreignkey.asp 
+    owner = db.relationship('owners', backref='users', lazy=True)
+    viewer = db.relationship('views', backref='users', lazy=True)
+    username = db.Column(db.String(80), unique=True) #https://www.w3schools.com/sql/sql_foreignkey.asp 
                                                                                      #FORIEGN KEY
                                                                                      #-The foriegn key is the column that can have more than
                                                                                      #-one entry of the same type.
                                                                                      #-The primary key (same numbers), sits in the other 
                                                                                      #-table and is unique to each row. It is the PRIMARY KEY. 
     email = db.Column(db.String(120), unique=True)
-    password = db.Column(db.String)
+    password = db.Column(db.String(120))
 
     def __init__(self, username, email,password):
         self.username = username
@@ -115,11 +112,24 @@ class users(UserMixin, db.Model):
     def __repr__(self):
         return '<User %r>' % self.username
 
+class sensors(db.Model):
+     
+    id = db.Column(db.Integer, primary_key=True)
+    
+    particleID = db.Column(db.String(80), unique=True)  
+    location = db.Column(db.String(120))
+    Data = db.relationship('Data', backref='sensors', lazy=True)
+
 
 
 viewer = db.Table('views', 
-    db.Column('pipe_sensor_id',db.Integer,db.ForeignKey('sensor.id'), primary_key=True),
-    db.Column('user_id',db.Integer,dbForeignKey('users.id'),primary_key=True)
+    db.Column('sensors_id',db.Integer,db.ForeignKey('sensors.id'), primary_key=True),
+    db.Column('user_id',db.Integer,db.ForeignKey('users.id'),primary_key=True)
+)
+
+owner = db.Table('owners', 
+    db.Column('sensors_id',db.Integer,db.ForeignKey('sensors.id'), primary_key=True, unique=True),
+    db.Column('user_id',db.Integer,db.ForeignKey('users.id'),primary_key=True)
 )
 
 
@@ -127,10 +137,7 @@ viewer = db.Table('views',
 
 
 
-tags = db.Table('tags',
-    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True),
-    db.Column('page_id', db.Integer, db.ForeignKey('page.id'), primary_key=True)
-)
+
 
 
 
@@ -234,29 +241,42 @@ def register():
         return redirect(url_for('home'))
     return render_template('register.html', form= form)
 
+
 @app.route('/logout.html')
 #This is pretty simple, we just call the library included logout_user()
 def logout():
     logout_user()
     return render_template('logout.html')
 
-###################################################END LOGIN STUFF##################################################
+###################################################HOME PAGE##################################################
 
 
-
-#This is the login
 @app.route('/')
 def home():
     return render_template('home.html')
 
+##################################################SENSOR REGISTER################################################
+class sensorRegisterForm(Form):
+    sensorID     = StringField('sensorID')
 
 
 
 
+@app.route('/sensorregister.html', methods = [ "GET", "POST"])
+def sensorRegister():
+    form = sensorRegisterForm(request.form)
+    if request.method == 'POST':
+        sensorID = form.sensorID.data
+        newSensor = owner(username=flask_login.current_user.username,sensorID=sensorID)
+        db.session.add(newSensor) #Add the new object to the que
+        db.session.commit() #Push it to the database
+        
+        return redirect(url_for('sensorregister.html'))
+    return render_template('sensorregister.html', form= form) #still need to build
 
 
 
-
+################################################DASHBOARD###################################################
 
 @app.route('/dashboard.html')
 @login_required #This makes this page require the user to be logged in to see it.
