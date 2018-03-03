@@ -380,7 +380,9 @@ def verify_password(username,password):
 @app.route('/api')
 @auth.login_required
 def index():
-    chartdata = pipe_sensor.query.all()
+    selectedSensor = sensors.query.filter_by(location = dashboard).first()
+    chartdata = selectedSensor.Data
+    
 
 
 
