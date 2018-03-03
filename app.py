@@ -285,27 +285,34 @@ def newSensor():
 def sensorlist():
     sensors = current_user.owners
     
-    # hold = [] #One has to do a for loop to get stuff out of a query. Do it here or do it in the template. This time we chose template. 
-    # for items in names: #Iteration will cycle through each row 
-    #     hold.append(items.location) 
-
+ 
     test ='this is a test'
     return render_template('sensors.html',sensors=sensors,test = test)
 
 ################################################DISPLAY SENSOR DATA###################################################
 
-@app.route('/dashboard.html') #Variables can be included in the route. See http://flask.pocoo.org/docs/0.12/quickstart/#routing
-@login_required #This makes this page require the user to be logged in to see it.
-def dashboard(): 
+@app.route('/<location>.html') #Variables can be included in the route. See http://flask.pocoo.org/docs/0.12/quickstart/#routing
+#@login_required #This makes this page require the user to be logged in to see it.
+def dashboard(location): 
+    if not current_user.is_authenticated:
+        return login_manager.unauthorized()
+    else: #logic to make sure user owns this sensor
+        listOfSensors = current_user.owners  
+        myLocations = [] #One has to do a for loop to get stuff out of a query. Do it here or do it in the template. This time we chose template. 
+        for items in listOfSensors: #Iteration will cycle through each row 
+            myLocations.append(items.location) 
+        if not location in myLocations:
+            return redirect(url_for('sensorlist'))
+
     location = 'dashboard'
- 
- 
+    selectedSensor = sensors.query.filter_by(location = location).first()
+    chartdata = selectedSensor.Data
             #Google charts tooka lot of work. Here are notes
             #See http://banjolanddesign.com/flask-google-charts.html
             # See https://www.codementor.io/sheena/understanding-sqlalchemy-cheat-sheet-du107lawl
             # See https://www.youtube.com/watch?v=Tu4vRU4lt6k
             #http://flask-sqlalchemy.pocoo.org/2.3/quickstart/
-    chartdata = pipe_sensor.query.all() #This returns a lists of dictionaries. Each item in the list is a dictionary (dictionary = key-value pair)
+    #chartdata = pipe_sensor.query.all() #This returns a lists of dictionaries. Each item in the list is a dictionary (dictionary = key-value pair)
                                         #The key-value pair can then ben accessed using dot (like chartdata[0].key) noation or ["key"] notation. ( like chartdata[0]["key"])
                                         #The key is always the header to that column.
                                         #Lists can be iterated over, dictionaries can't. However, lists cannot access their items using dot notation.
