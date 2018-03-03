@@ -304,9 +304,11 @@ def dashboard(location):
         if not location in myLocations:
             return redirect(url_for('sensorlist'))
 
-    location = 'dashboard'
+    
     selectedSensor = sensors.query.filter_by(location = location).first()
     chartdata = selectedSensor.Data
+    selectedSensorID = selectedSensor.id
+    sensorLocation =selectedSensor.location
             #Google charts tooka lot of work. Here are notes
             #See http://banjolanddesign.com/flask-google-charts.html
             # See https://www.codementor.io/sheena/understanding-sqlalchemy-cheat-sheet-du107lawl
@@ -338,7 +340,7 @@ def dashboard(location):
 
 
 
-    return render_template('dashboard.html',array_ISO8601=array_ISO8601,data=array_data) #Pass arrays containing columns to the javascript
+    return render_template('dashboard.html',array_ISO8601=array_ISO8601,data=array_data,selectedSensorID=selectedSensorID,sensorLocation=sensorLocation) #Pass arrays containing columns to the javascript
 
 
 
@@ -350,9 +352,11 @@ def particle():
         webhook = request.form   #see http://flask.pocoo.org/docs/0.12/api/#flask.Request
         data = webhook['data']   #look inside the multidict
         ISO8601 = webhook['published_at']
+        particleID =webhook['particleID']
+        selectedSensor = sensors.query.filter_by(particleID = particleID).first()
+        selectedSensorID = selectedSensor.id
 
-
-        db.engine.execute("INSERT INTO pipe_sensor(ISO8601,data) VALUES (%s, %s)",(ISO8601, data))
+        db.engine.execute("INSERT INTO data(sensors,ISO8601,data) VALUES (%s, %s, %s)",(selectedSensorID,ISO8601, data))
         return redirect(url_for('register'))
 
     return render_template('input.html')
