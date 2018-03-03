@@ -37,7 +37,7 @@ bcrypt = Bcrypt(app) #use for encryption
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
 #=======
 #DATABASE: use this stuff for Zach's desktop
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-7'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-8'
 db = SQLAlchemy(app)  
 
 
@@ -61,10 +61,17 @@ db = SQLAlchemy(app)
 
 
 #End database deployment
-########################################END DATABASE STUFF########################################################
+########################################FLASK-SQLALCHEMY DATABASE MODELS########################################################
+#Many to many relationship tables. See https://www.youtube.com/watch?v=OvhoYbjtiKc
+views = db.Table('views', 
+    db.Column('sensors_id',db.Integer,db.ForeignKey('sensors.id'), primary_key=True),
+    db.Column('user_id',db.Integer,db.ForeignKey('users.id'),primary_key=True)
+)
 
-
-#RIVERSENSE TABLE
+owners = db.Table('owners', 
+    db.Column('sensors_id',db.Integer,db.ForeignKey('sensors.id'), primary_key=True, unique=True),
+    db.Column('user_id',db.Integer,db.ForeignKey('users.id'),primary_key=True)
+)
     #Create a model of the database for use in python
 class Data(db.Model): #The name is the name from the SQL database. This is not about setting up a SQL database!
                                #It is about creating a local model of the far away SQL database
@@ -78,23 +85,22 @@ class Data(db.Model): #The name is the name from the SQL database. This is not a
                                                                 #Recall also that this is flask-SQLAlchemy, so google the docs for more info.
     data = db.Column('data', db.Integer)
     timestamp = db.Column('timestamp', db.String(80))
-    
-    #ownerID = db.Column('ownerID', db.Integer,db.ForeignKey('owner.id')) #This is the name of the Sensor
-
+  
     #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
-    # or whatever we name it. Things like pipe_sensor.query.all() See functions for use examples.
+    # or whatever we name it. Things like data.query.all() See functions for use examples.
 
 
 
 
 
-#USERS table
+#USERS table, very special. Note the UserMixin getting passed in. 
 class users(UserMixin, db.Model):
-     #This is how you make a new table in SQL Alchemy. It is a table that represents a table in SQL.
      #See https://www.pythoncentral.io/introductory-tutorial-python-sqlalchemy/
     id = db.Column(db.Integer, primary_key=True)
-    owner = db.relationship('owners', backref='users', lazy=True)
-    viewer = db.relationship('views', backref='users', lazy=True)
+
+    owners = db.relationship('sensors',secondary=owners,lazy=True, backref= db.backref('owner', lazy=True)) 
+    viewers = db.relationship('sensors',secondary=views,lazy=True,
+        backref=db.backref('viewers', lazy=True))
     username = db.Column(db.String(80), unique=True) #https://www.w3schools.com/sql/sql_foreignkey.asp 
                                                                                      #FORIEGN KEY
                                                                                      #-The foriegn key is the column that can have more than
@@ -112,25 +118,17 @@ class users(UserMixin, db.Model):
     def __repr__(self):
         return '<User %r>' % self.username
 
+
 class sensors(db.Model):
      
     id = db.Column(db.Integer, primary_key=True)
     
     particleID = db.Column(db.String(80), unique=True)  
     location = db.Column(db.String(120))
-    Data = db.relationship('Data', backref='sensors', lazy=True)
+    Data = db.relationship('Data',backref= db.backref('sensorID', lazy=True))
 
 
 
-viewer = db.Table('views', 
-    db.Column('sensors_id',db.Integer,db.ForeignKey('sensors.id'), primary_key=True),
-    db.Column('user_id',db.Integer,db.ForeignKey('users.id'),primary_key=True)
-)
-
-owner = db.Table('owners', 
-    db.Column('sensors_id',db.Integer,db.ForeignKey('sensors.id'), primary_key=True, unique=True),
-    db.Column('user_id',db.Integer,db.ForeignKey('users.id'),primary_key=True)
-)
 
 
 
@@ -256,32 +254,54 @@ def home():
     return render_template('home.html')
 
 ##################################################SENSOR REGISTER################################################
+
+
 class sensorRegisterForm(Form):
-    sensorID     = StringField('sensorID')
+    particleID     = StringField('particleID', [validators.Length(max=80),validators.Required()])
+    location     = StringField('location', [validators.Length(max=120),validators.Required()])
 
 
 
 
-@app.route('/sensorregister.html', methods = [ "GET", "POST"])
-def sensorRegister():
+@app.route('/newSensor.html', methods = [ "GET", "POST"])
+def newSensor():
     form = sensorRegisterForm(request.form)
-    if request.method == 'POST':
-        sensorID = form.sensorID.data
-        newSensor = owner(username=flask_login.current_user.username,sensorID=sensorID)
+    if request.method == 'POST' and form.validate():
+        particleID = form.particleID.data
+        location =form.location.data
+        newSensor = sensors(particleID=particleID,location=location)
         db.session.add(newSensor) #Add the new object to the que
+        ID = current_user.id
+        newSensor.owner.append(current_user) #add relationship in many to many table
+        newSensor.viewers.append(current_user)
         db.session.commit() #Push it to the database
         
-        return redirect(url_for('sensorregister.html'))
-    return render_template('sensorregister.html', form= form) #still need to build
+        return redirect(url_for('newSensor'))
+    return render_template('newSensor.html', form= form) 
 
 
+################################################  LIST OF SENSORS       ##########################################
+@app.route('/sensors.html')
+def sensorlist():
+    sensors = current_user.owners
+    
+    # hold = [] #One has to do a for loop to get stuff out of a query. Do it here or do it in the template. This time we chose template. 
+    # for items in names: #Iteration will cycle through each row 
+    #     hold.append(items.location) 
 
-################################################DASHBOARD###################################################
+    test ='this is a test'
+    return render_template('sensors.html',sensors=sensors,test = test)
 
-@app.route('/dashboard.html')
+################################################DISPLAY SENSOR DATA###################################################
+
+@app.route('/dashboard.html') #Variables can be included in the route. See http://flask.pocoo.org/docs/0.12/quickstart/#routing
 @login_required #This makes this page require the user to be logged in to see it.
-def dashboard():
-#This is the homepage. Doing experiments. See http://banjolanddesign.com/flask-google-charts.html
+def dashboard(): 
+    location = 'dashboard'
+ 
+ 
+            #Google charts tooka lot of work. Here are notes
+            #See http://banjolanddesign.com/flask-google-charts.html
             # See https://www.codementor.io/sheena/understanding-sqlalchemy-cheat-sheet-du107lawl
             # See https://www.youtube.com/watch?v=Tu4vRU4lt6k
             #http://flask-sqlalchemy.pocoo.org/2.3/quickstart/
