@@ -1,0 +1,32 @@
+{%extends 'layout.html'%}
+
+{%block body %}
+{%include 'includes/navbar.html'%}
+<div class = "container">
+<h1>List of sensors</h1>
+
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+      </ul>
+  {% endif %}
+{% endwith %}
+
+
+
+
+<ul class'list-group'>
+    {% for sensor in sensors %}
+    <li><a href="{{sensor.location + ".html"}}" class="list-group-item">{{sensor.location}}</a></li>
+    {% else %}
+    <li>No sensors registered</li>
+    {% endfor %}
+{{test}}
+
+</div>
+
+{% endblock %}

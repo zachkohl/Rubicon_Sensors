@@ -1,0 +1,48 @@
+{%extends 'layout.html'%}
+
+{%block body %}
+{%include 'includes/navbar.html'%}
+<div class = "container">
+<h1>Register new user</h1>
+<form action ="" method ="POST">
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+      </ul>
+  {% endif %}
+{% endwith %}
+
+{% if form.errors %}
+    <ul class="errors">
+        {% for field_name, field_errors in form.errors|dictsort if field_errors %}
+            {% for error in field_errors %}
+                <li>{{ form[field_name].label }}: {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+{% endif %}
+
+
+<div class = "form-group">
+{{form.particleID.label}}
+{{form.particleID}}
+{{form.location.label}}
+{{form.location}}
+
+{{form.imei.label}}
+{{form.imei}}
+{{form.iccid.label}}
+{{form.iccid}}
+</div>
+<button type = "submit">submit</button>
+<p></p>
+{{current_user.id}}
+
+</form>
+
+</div>
+{% endblock %}
