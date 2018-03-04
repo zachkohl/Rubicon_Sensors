@@ -10,7 +10,8 @@ import gviz_api #google chart api
 from flask_sslify import SSLify #force HTTPS
 from flask_httpauth import HTTPBasicAuth #Import httpAuth for android login
 import json
-import requests #for interacting with Particle API
+#import requests #for Particle customer creation
+#from requests_oauthlib import OAuth2Session #See https://requests-oauthlib.readthedocs.io/en/latest/examples/real_world_example.html
 
 
 
@@ -37,7 +38,7 @@ bcrypt = Bcrypt(app) #use for encryption
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
 #=======
 #DATABASE: use this stuff for Zach's desktop
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-8'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-9'
 db = SQLAlchemy(app)  
 
 
@@ -125,6 +126,8 @@ class sensors(db.Model):
     
     particleID = db.Column(db.String(80), unique=True)  
     location = db.Column(db.String(120))
+    imei =db.Column(db.String(120))
+    iccid =db.Column(db.String(80))
     Data = db.relationship('Data',backref= db.backref('sensorID', lazy=True))
 
 
@@ -259,17 +262,22 @@ def home():
 class sensorRegisterForm(Form):
     particleID     = StringField('particleID', [validators.Length(max=80),validators.Required()])
     location     = StringField('location', [validators.Length(max=120),validators.Required()])
+    imei     = StringField('imei', [validators.Length(max=120)])
+    iccid     = StringField('iccid', [validators.Length(max=120)])
 
 
 
 
 @app.route('/newSensor.html', methods = [ "GET", "POST"])
+@login_required
 def newSensor():
     form = sensorRegisterForm(request.form)
     if request.method == 'POST' and form.validate():
         particleID = form.particleID.data
         location =form.location.data
-        newSensor = sensors(particleID=particleID,location=location)
+        imei =form.imei.data
+        iccid =form.iccid.data
+        newSensor = sensors(particleID=particleID,location=location,imei=imei,iccid=iccid)
         db.session.add(newSensor) #Add the new object to the que
         ID = current_user.id
         newSensor.owner.append(current_user) #add relationship in many to many table
@@ -277,9 +285,40 @@ def newSensor():
         db.session.commit() #Push it to the database
         
         #Particle API 
+            #See http://docs.python-requests.org/en/master/user/quickstart/
+            #See https://docs.particle.io/reference/api/#create-an-oauth-client
+        # Example with form encoded format
+        with open('static/particleAPI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
+            client_secret=file.read()
+        client_id = 'sensorregistration-2783'
+        
+
+        #THE KEY IS GOING TO BE ACTIVATE/DEACTIVATE SIM CARDS, everything else can be handled through Particle GUI
+
+        #authorization_base_url =""
+        #token_url = ""
+        #scope = [""]
+        #oauth = oAuth2Session(client_id, redict_uri, scope=scope)
+        
 
 
+        #ParticleToken = oauth.fetch_token(token_url, client_secret=client_secret,authorization_response=request.url)
+        
+        #Access resources
+        #ParticleResources = oauth.get('resources url')
+        
+        # #The following sets up a shadow customer on the particle server
+        # payload = {'email':current_user.email,'no_password':'true'}
+        # particle = requests.post('https://'+client_id+':'+client_secret+'@https://api.particle.io/v1/products/7107/customers',data=payload)
+        # #particle is now the access token
 
+        # #create claim code 
+        # payload = {'access_token':particle,'imei':imei,'iccid':iccid} #probably going to have trouble because the particle object won't return the proper token data
+        # claimCode = requests.post('https://'+client_id+':'+client_secret+'@https://api.particle.io/v1/products/7107/device_claims',data=payload)
+
+
+        #The following helps with CSRF attacks, https://requests-oauthlib.readthedocs.io/en/latest/examples/real_world_example.html
+        #session['oauth_state'] = state
         return redirect(url_for('newSensor'))
     return render_template('newSensor.html', form= form) 
 
@@ -288,10 +327,7 @@ def newSensor():
 @app.route('/sensors.html')
 def sensorlist():
     myListOfSensors = current_user.owners
-    
- 
-    x = requests.get('https://api.github.com/events')
-    test = jsonify(x.json())
+    test = 'stuff'
     return render_template('sensors.html',sensors=myListOfSensors,test = test)
 
 ################################################DISPLAY SENSOR DATA###################################################
@@ -357,7 +393,7 @@ def particle():
         webhook = request.form   #see http://flask.pocoo.org/docs/0.12/api/#flask.Request
         data = webhook['data']   #look inside the multidict
         ISO8601 = webhook['published_at']
-        particleID =webhook['particleID']
+        particleID =webhook['coreid']
         selectedSensor = sensors.query.filter_by(particleID = particleID).first()
         selectedSensorID = selectedSensor.id
 
