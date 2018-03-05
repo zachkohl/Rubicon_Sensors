@@ -6,7 +6,7 @@ from werkzeug.security import check_password_hash, generate_password_hash #don't
 from wtforms import Form, BooleanField, StringField, validators,PasswordField
 from flask.ext.bcrypt import Bcrypt, generate_password_hash, check_password_hash
 # from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-import gviz_api #google chart api
+#import gviz_api #google chart api
 from flask_sslify import SSLify #force HTTPS
 from flask_httpauth import HTTPBasicAuth #Import httpAuth for android login
 import json
@@ -23,12 +23,12 @@ bcrypt = Bcrypt(app) #use for encryption
 
 
 ####################################################DATABASE STUFF###############################################################
-#Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine. 
+#Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine.
 
 
 #  #DATABASE: use this stuff for Sam's desktop
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
-# db = SQLAlchemy(app)  
+# db = SQLAlchemy(app)
 
 
 
@@ -38,38 +38,38 @@ bcrypt = Bcrypt(app) #use for encryption
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-1'
 #=======
 #DATABASE: use this stuff for Zach's desktop
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-9'
-db = SQLAlchemy(app)  
-
-
-
-# DATABASE: use this stuff for deployment on python anywhere. 
-
-# sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development. 
-# SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
-
-#     username="rubiconsensors",
-#     password="wf5PWRM4",
-#     hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-#     databasename="rubiconsensors$riversensedb",
-# )
-
-
-# app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-# app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:kr8tBnnz@localhost:3306/rubiconsensors_0-9'
 # db = SQLAlchemy(app)
+
+
+
+# DATABASE: use this stuff for deployment on python anywhere.
+
+sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development.
+SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+
+    username="rubiconsensors",
+    password="wf5PWRM4",
+    hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+    databasename="rubiconsensors$riversensedb",
+)
+
+
+app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
 
 #End database deployment
 ########################################FLASK-SQLALCHEMY DATABASE MODELS########################################################
 #Many to many relationship tables. See https://www.youtube.com/watch?v=OvhoYbjtiKc
-views = db.Table('views', 
+views = db.Table('views',
     db.Column('sensors_id',db.Integer,db.ForeignKey('sensors.id'), primary_key=True),
     db.Column('user_id',db.Integer,db.ForeignKey('users.id'),primary_key=True)
 )
 
-owners = db.Table('owners', 
+owners = db.Table('owners',
     db.Column('sensors_id',db.Integer,db.ForeignKey('sensors.id'), primary_key=True, unique=True),
     db.Column('user_id',db.Integer,db.ForeignKey('users.id'),primary_key=True)
 )
@@ -81,12 +81,12 @@ class Data(db.Model): #The name is the name from the SQL database. This is not a
     id = db.Column('id', db.Integer, primary_key=True) #Describes the first column.
                                                                 #Input arguments are the column name, what the datatype is, and if it is a primary key
                                                                 #Don't have to worry about auto imcrement normally because SQL does that automatically. See http://docs.sqlalchemy.org/en/latest/core/metadata.html#sqlalchemy.schema.Column.params.onupdate
-    sensors = db.Column('sensors', db.Integer,db.ForeignKey('sensors.id'), primary_key=True)
+    sensors = db.Column('sensors', db.Integer,db.ForeignKey('sensors.id'))
     ISO8601 = db.Column('ISO8601', db.String(80))                   #descriptions of the other columns, for explanation of legal data types, see https://dev.mysql.com/doc/refman/5.7/en/numeric-types.html
                                                                 #Recall also that this is flask-SQLAlchemy, so google the docs for more info.
     data = db.Column('data', db.Integer)
     timestamp = db.Column('timestamp', db.String(80))
-  
+
     #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
     # or whatever we name it. Things like data.query.all() See functions for use examples.
 
@@ -94,37 +94,37 @@ class Data(db.Model): #The name is the name from the SQL database. This is not a
 
 
 
-#USERS table, very special. Note the UserMixin getting passed in. 
+#USERS table, very special. Note the UserMixin getting passed in.
 class users(UserMixin, db.Model):
      #See https://www.pythoncentral.io/introductory-tutorial-python-sqlalchemy/
     id = db.Column(db.Integer, primary_key=True)
 
-    owners = db.relationship('sensors',secondary=owners,lazy=True, backref= db.backref('owner', lazy=True)) 
+    owners = db.relationship('sensors',secondary=owners,lazy=True, backref= db.backref('owner', lazy=True))
     viewers = db.relationship('sensors',secondary=views,lazy=True,
         backref=db.backref('viewers', lazy=True))
-    username = db.Column(db.String(80), unique=True) #https://www.w3schools.com/sql/sql_foreignkey.asp 
+    username = db.Column(db.String(80), unique=True) #https://www.w3schools.com/sql/sql_foreignkey.asp
                                                                                      #FORIEGN KEY
                                                                                      #-The foriegn key is the column that can have more than
                                                                                      #-one entry of the same type.
-                                                                                     #-The primary key (same numbers), sits in the other 
-                                                                                     #-table and is unique to each row. It is the PRIMARY KEY. 
+                                                                                     #-The primary key (same numbers), sits in the other
+                                                                                     #-table and is unique to each row. It is the PRIMARY KEY.
     email = db.Column(db.String(120), unique=True)
     password = db.Column(db.String(120))
 
     def __init__(self, username, email,password):
         self.username = username
         self.email = email
-        self.password = password 
+        self.password = password
 
     def __repr__(self):
         return '<User %r>' % self.username
 
 
 class sensors(db.Model):
-     
+
     id = db.Column(db.Integer, primary_key=True)
-    
-    particleID = db.Column(db.String(80), unique=True)  
+
+    particleID = db.Column(db.String(80), unique=True)
     location = db.Column(db.String(120))
     imei =db.Column(db.String(120))
     iccid =db.Column(db.String(80))
@@ -159,7 +159,7 @@ class LoginForm(Form):
     username     = StringField('Username', [validators.Required()])
     password     = PasswordField('Password', [validators.Required()])
 
-#Create user class that will tell us something about the user. This is not the database model. This is the individual that logs in 
+#Create user class that will tell us something about the user. This is not the database model. This is the individual that logs in
 
 class User(UserMixin):
  #By passing in the "UserMixin" we inherit all the abilities of the UserMixin class
@@ -227,7 +227,7 @@ def login():
             return redirect(url_for('login'))
 
     return render_template('login.html', form=form)
-   
+
 #The register function is very similar to login. But it stores into a database rather than doing a query.
 @app.route('/register.html', methods = [ "GET", "POST"])
 def register():
@@ -283,15 +283,15 @@ def newSensor():
         newSensor.owner.append(current_user) #add relationship in many to many table
         newSensor.viewers.append(current_user)
         db.session.commit() #Push it to the database
-        
-        #Particle API 
+
+        #Particle API
             #See http://docs.python-requests.org/en/master/user/quickstart/
             #See https://docs.particle.io/reference/api/#create-an-oauth-client
         # Example with form encoded format
-        with open('static/particleAPI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-            client_secret=file.read()
-        client_id = 'sensorregistration-2783'
-        
+        #with open('static/particleAPI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
+        #    client_secret=file.read()
+        #client_id = 'sensorregistration-2783'
+
 
         #THE KEY IS GOING TO BE ACTIVATE/DEACTIVATE SIM CARDS, everything else can be handled through Particle GUI
 
@@ -299,20 +299,20 @@ def newSensor():
         #token_url = ""
         #scope = [""]
         #oauth = oAuth2Session(client_id, redict_uri, scope=scope)
-        
+
 
 
         #ParticleToken = oauth.fetch_token(token_url, client_secret=client_secret,authorization_response=request.url)
-        
+
         #Access resources
         #ParticleResources = oauth.get('resources url')
-        
+
         # #The following sets up a shadow customer on the particle server
         # payload = {'email':current_user.email,'no_password':'true'}
         # particle = requests.post('https://'+client_id+':'+client_secret+'@https://api.particle.io/v1/products/7107/customers',data=payload)
         # #particle is now the access token
 
-        # #create claim code 
+        # #create claim code
         # payload = {'access_token':particle,'imei':imei,'iccid':iccid} #probably going to have trouble because the particle object won't return the proper token data
         # claimCode = requests.post('https://'+client_id+':'+client_secret+'@https://api.particle.io/v1/products/7107/device_claims',data=payload)
 
@@ -320,7 +320,7 @@ def newSensor():
         #The following helps with CSRF attacks, https://requests-oauthlib.readthedocs.io/en/latest/examples/real_world_example.html
         #session['oauth_state'] = state
         return redirect(url_for('newSensor'))
-    return render_template('newSensor.html', form= form) 
+    return render_template('newSensor.html', form= form)
 
 
 ################################################  LIST OF SENSORS       ##########################################
@@ -334,18 +334,18 @@ def sensorlist():
 
 @app.route('/<location>.html') #Variables can be included in the route. See http://flask.pocoo.org/docs/0.12/quickstart/#routing
 #@login_required #This makes this page require the user to be logged in to see it.
-def dashboard(location): 
+def dashboard(location):
     if not current_user.is_authenticated:
         return login_manager.unauthorized()
     else: #logic to make sure user owns this sensor
-        listOfSensors = current_user.owners  
-        myLocations = [] #One has to do a for loop to get stuff out of a query. Do it here or do it in the template. This time we chose template. 
-        for items in listOfSensors: #Iteration will cycle through each row 
-            myLocations.append(items.location) 
+        listOfSensors = current_user.owners
+        myLocations = [] #One has to do a for loop to get stuff out of a query. Do it here or do it in the template. This time we chose template.
+        for items in listOfSensors: #Iteration will cycle through each row
+            myLocations.append(items.location)
         if not location in myLocations:
             return redirect(url_for('sensorlist'))
 
-    
+
     selectedSensor = sensors.query.filter_by(location = location).first()
     chartdata = selectedSensor.Data
     selectedSensorID = selectedSensor.id
@@ -397,7 +397,15 @@ def particle():
         selectedSensor = sensors.query.filter_by(particleID = particleID).first()
         selectedSensorID = selectedSensor.id
 
+
         db.engine.execute("INSERT INTO data(sensors,ISO8601,data) VALUES (%s, %s, %s)",(selectedSensorID,ISO8601, data))
+        # id | sensors | ISO8601 | data | timestamp
+        #newDataPoint = data(sensors=selectedSensorID,ISO8601=ISO8601,data=data)
+        #db.session.add(newDataPoint) #Add the new object to the que
+
+        #selectedSensor.data.append(newDataPoint)
+        #db.session.commit()
+
         return redirect(url_for('register'))
 
     return render_template('input.html')
@@ -413,7 +421,7 @@ def verify_password(username,password):
     user = users.query.filter_by(username = username).first() #Do a database query of the username
     if user:
         #If the user object got created by the database, then do this stuff
-            return check_password_hash( user.password, password)  
+            return check_password_hash( user.password, password)
     else:
         return False
     return False
@@ -423,19 +431,19 @@ def verify_password(username,password):
 def index():
     selectedSensor = sensors.query.filter_by(location = dashboard).first()
     chartdata = selectedSensor.Data
-    
 
 
 
 
-    array_ISO8601 = [] 
-    for items in chartdata: 
-        array_ISO8601.append(items.ISO8601)       
+
+    array_ISO8601 = []
+    for items in chartdata:
+        array_ISO8601.append(items.ISO8601)
     array_data = []
     for items in chartdata:
         array_data.append(float(items.data))
-    
-    
+
+
         apiData = json.dumps(dict(zip(array_ISO8601,array_data)))
     #return "Hello, %s!" % auth.username()
     return apiData
