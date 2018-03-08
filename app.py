@@ -22,25 +22,25 @@ bcrypt = Bcrypt(app) #use for encryption
 
 ####################################################DATABASE CONNECTIONS###############################################################
 #Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine.
-# if __name__ == '__main__':
-with open('static/databaseURI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-    databaseURI=file.read()
-app.config['SQLALCHEMY_DATABASE_URI'] = databaseURI
+if __name__ == '__main__':
+    with open('static/databaseURI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
+        databaseURI=file.read()
+    app.config['SQLALCHEMY_DATABASE_URI'] = databaseURI
     
-# else:
-#     sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development.
-#     SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+else:
+    sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development.
+    SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-#         username="rubiconsensors",
-#         password="wf5PWRM4",
-#         hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-#         databasename="rubiconsensors$riversensedb",
-#     )
+        username="rubiconsensors",
+        password="wf5PWRM4",
+        hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+        databasename="rubiconsensors$riversensedb",
+    )
 
 
-#     app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-#     app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-#     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+    app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 
