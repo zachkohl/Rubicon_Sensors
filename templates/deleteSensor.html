@@ -3,7 +3,7 @@
 {%block body %}
 {%include 'includes/navbar.html'%}
 <div class = "container">
-<h1>Register new user</h1>
+<h1>Delete a sensor</h1>
 <form action ="" method ="POST">
 
 {% with messages = get_flashed_messages() %}
@@ -28,29 +28,16 @@
 
 
 <div class = "form-group">
-{{form.username.label}}
-{{form.username}}
-{{form.password.label}}
-{{form.password}}
-{{form.email.label}}
-{{form.email}}
+{{form.rubiconID.label}}
+{{form.rubiconID}}
+
+
 </div>
-<script
-src="https://checkout.stripe.com/checkout.js" class="stripe-button"
-data-key="pk_test_Uqssjv6b7oCEtTwCNan1phZu"
-
-data-name="Rubicon Sensors LLC"
-data-description="Put in card information for future charges"
-data-image="https://stripe.com/img/documentation/checkout/marketplace.png"
-data-locale="auto">
-</script>
 <button type = "submit">submit</button>
-
+<p></p>
+{{current_user.id}}
 
 </form>
-{{y}}
+
 </div>
-{%for values in x%}
-{{values.username}}
-{%endfor%}
 {% endblock %}
