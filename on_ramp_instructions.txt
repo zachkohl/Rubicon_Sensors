@@ -1,0 +1,19 @@
+To run this program, get yourself a python vitual dev going.
+
+See https://stackoverflow.com/questions/35950740/virtualenv-is-not-recognized-as-an-internal-or-external-command-operable-prog#36819530
+
+This seems to work:
+
+python -m virtualenv .
+.\scripts\activate
+
+TO DEACTIVATE USE THE FOLLOWING COMMAND:
+
+deactivate
+
+
+To install all the packages, run the following command: pip install -r requirements.txt
+
+Should be good to go. 
+
+To add packages, make sure to add them to to the requirements document first. 
