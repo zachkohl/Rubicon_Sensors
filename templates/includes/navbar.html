@@ -9,7 +9,7 @@
     <ul></ul>
 
     <ul class="nav navbar-nav">
-     <li><a href="/" class="btn btn-primary btn-lg active">Home</a></li>
+     <li><a href="/" class="btn btn-primary btn-lg">Home</a></li>
      <ul></ul>
      <!-- <li><a href="/login/">Login</a></li>
      <li><a href="/logout.html">Logout</a></li> -->
@@ -17,9 +17,13 @@
     <!-- This is the session checking login logout link. -->
     <ul class="nav navbar-nav navbar-right">
       {% if current_user.is_authenticated %}
-          <li><a href="{{ url_for('logout') }}" class="btn btn-primary btn-lg active">Log out</a></li>
+          <li><a href="{{ url_for('logout') }}" class="btn btn-primary btn-lg">Log out</a></li>
+          <ul></ul>
+          <li><a href="{{ url_for('newSensor') }}" class="btn btn-primary btn-lg ">Register New Sensor</a></li>
       {% else %}
-          <li><a href="{{ url_for('login') }}" class="btn btn-primary btn-lg active">Log in</a></li>
+          <li><a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Log in</a></li>
+          <ul></ul>
+          <li><a href="{{ url_for('register') }}" class="btn btn-primary btn-lg ">Register New User</a></li>
       {% endif %}
   </ul>
 
