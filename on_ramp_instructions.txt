@@ -11,7 +11,8 @@ To deactivate and return to normal, just type "deactivate" at anytime.
 
 NEXT:
 Return to the git repository folder containing all the Rubicon Sensors stuff. Should be the folder this text message is in. 
-Run: pip install -r requirements.txt
+Run: 
+pip install -r requirements.txt
 
 This will install all the python dependencies. 
 
