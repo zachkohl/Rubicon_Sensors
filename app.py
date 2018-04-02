@@ -580,7 +580,12 @@ def index():
     return apiData
 
 
+###################################################JAVASCRIPT GAMES##################################################
 
+
+@app.route('/javascriptGames')
+def javascriptGames():
+    return render_template('javascriptGames/javascriptGames.html')
 
 
 
