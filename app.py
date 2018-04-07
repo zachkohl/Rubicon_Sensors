@@ -64,8 +64,8 @@ db = SQLAlchemy(app)
 
 ####################################END DATABASE CONNECTIONS##############################################
 ###Stripe Stuff
-with open('static/stripeSecretKey.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-    stripe.api_key=file.read()
+# with open('static/stripeSecretKey.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
+#     stripe.api_key=file.read()
 # plan = stripe.Plan.create(
 # product={'name': 'Basic Product'},
 # nickname='Basic monthly',
@@ -279,15 +279,15 @@ def register():
         email = form.email.data
         pw_hash = bcrypt.generate_password_hash(password)
         #STRIPE
-        token = request.form['stripeToken'] 
-        customer = stripe.Customer.create(
-        email=email,
-        source = token,
+       #token = request.form['stripeToken'] 
+        # customer = stripe.Customer.create(
+        # email=email,
+        # source = token,
         )
 
-        stripeID = customer.id
+        #stripeID = customer.id
         
-        db.engine.execute("INSERT INTO users(username,password,email,stripeID,subscriptionID) VALUES (%s, %s,%s,%s)",(username, pw_hash,email,stripeID))
+        db.engine.execute("INSERT INTO users(username,password,email) VALUES (%s, %s,%s)",(username, pw_hash,email))
         
         
 
@@ -326,8 +326,8 @@ class sensorRegisterForm(Form):
 @login_required
 def newSensor():
     form = sensorRegisterForm(request.form)
-    x = current_user.subscriptionID
-    stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
+    #x = current_user.subscriptionID
+    #stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
     # = stripeSubscription.items.plan + 1
     #print(x)
     #print(stripeSubscription.quantity)
@@ -337,9 +337,24 @@ def newSensor():
         location =form.location.data
 
         newSensor = sensors.query.filter_by(rubiconID = rubiconID).first() #Do a database query of the username
-        if not current_user.owners:
-            print('no sensors present')
+        if newSensor:
+            if newSensor.notDeployed == True:
+                newSensor.notDeployed = False
+                newSensor.installation = newSensor.installation + 1
+                activation_Date = activationDate(sensors = newSensor.id,activation_Date = time.strftime('%Y-%m-%d %H:%M:%S') )
+                db.session.add(activation_Date)
+                db.session.add(newSensor) #Add the new object to the que
+                db.session.commit() #Commit it
 
+            else:
+                flash('invalid rubicon ID')
+        else:
+            flash('invalid rubicon ID')
+
+    # id = db.Column('id', db.Integer, primary_key=True) 
+    # sensors = db.Column('sensors', db.Integer,db.ForeignKey('sensors.id'))
+    # activation_Date = db.Column(db.DateTime)
+    # installation = db.Column(db.Integer)
         # if newSensor:
         #     #If the user object got created by the database, then do this stuff
         #     if newSensor.notDeployed == True:
@@ -448,9 +463,9 @@ def deleteSensor():
                 db.session.commit()   
                 db.engine.execute("DELETE FROM owners WHERE sensors_id =%s",(oldSensor.id))
                 db.engine.execute("DELETE FROM views WHERE sensors_id =%s",(oldSensor.id))
-                stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
-                stripeSubscription.quantity = stripeSubscription.quantity - 1
-                stripeSubscription.save()
+                #stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
+                #stripeSubscription.quantity = stripeSubscription.quantity - 1
+                #stripeSubscription.save()
                 flash('Sensor deleted')
                 
                 return redirect(url_for('sensorlist'))
@@ -569,8 +584,6 @@ def verify_password(username,password):
 def index():
     selectedSensor = sensors.query.filter_by(location = dashboard).first()
     chartdata = selectedSensor.Data
-
-
 
 
 
