@@ -25,31 +25,31 @@ bcrypt = Bcrypt(app) #use for encryption
 
 ####################################################DATABASE CONNECTIONS###############################################################
 #Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine.
-if __name__ == '__main__':
-    with open('static/databaseURI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-        databaseURI=file.read()
-    app.config['SQLALCHEMY_DATABASE_URI'] = databaseURI
+# if __name__ == '__main__':
+#     with open('static/databaseURI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
+#         databaseURI=file.read()
+#     app.config['SQLALCHEMY_DATABASE_URI'] = databaseURI
     
-else:
-    sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development.
-    SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+# else:
+#     sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development.
+#     SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-        username="rubiconsensors",
-        password="wf5PWRM4",
-        hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-        databasename="rubiconsensors$riversensedb",
-    )
+#         username="rubiconsensors",
+#         password="wf5PWRM4",
+#         hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+#         databasename="rubiconsensors$riversensedb",
+#     )
 
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-    app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
-###FOR USE WITH RECREATING DATABASE
-# with open('static/databaseURI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-#     databaseURI=file.read()
-# app.config['SQLALCHEMY_DATABASE_URI'] = databaseURI
+#     app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+#     app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+#     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # db = SQLAlchemy(app)
+###FOR USE WITH RECREATING DATABASE
+with open('static/databaseURI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
+    databaseURI=file.read()
+app.config['SQLALCHEMY_DATABASE_URI'] = databaseURI
+db = SQLAlchemy(app)
 
 
 #To rebuild the database on a local machine, comment out the above if statement and uncomment the below code
@@ -64,8 +64,8 @@ db = SQLAlchemy(app)
 
 ####################################END DATABASE CONNECTIONS##############################################
 ###Stripe Stuff
-with open('static/stripeSecretKey.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-    stripe.api_key=file.read()
+# with open('static/stripeSecretKey.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
+#     stripe.api_key=file.read()
 # plan = stripe.Plan.create(
 # product={'name': 'Basic Product'},
 # nickname='Basic monthly',
@@ -98,6 +98,7 @@ class Data(db.Model): #The name is the name from the SQL database. This is not a
                                                                 #Recall also that this is flask-SQLAlchemy, so google the docs for more info.
     data = db.Column('data', db.Integer)
     timestamp = db.Column('timestamp', db.String(80))
+    installation = db.Column('installation', db.Integer) #Describes the first column.
 
     #We now have a map for SQLAlchemy to use to relate tot the database. This will let us do all the fun SQLAlchemy commands to electron1
     # or whatever we name it. Things like data.query.all() See functions for use examples.
@@ -151,6 +152,7 @@ class sensors(db.Model):
     PayedFlag = db.Column(db.Boolean)
     statusCode = db.relationship('statusCode',backref= db.backref('sensorID', lazy=True)) 
     notes = db.Column('notes', db.Text)
+    installation = db.Column(db.Integer)
     #deletionDate = db.Column(db.DateTime) #ADD THIS!!
 
 
@@ -168,6 +170,11 @@ class statusCode(db.Model):
     aboutStatusCode = db.Column('aboutStatusCode', db.Text)
 
 
+class activationDate(db.Model): 
+    id = db.Column('id', db.Integer, primary_key=True) 
+    sensors = db.Column('sensors', db.Integer,db.ForeignKey('sensors.id'))
+    activation_Date = db.Column(db.DateTime)
+    installation = db.Column(db.Integer)
 
 
 
@@ -272,15 +279,15 @@ def register():
         email = form.email.data
         pw_hash = bcrypt.generate_password_hash(password)
         #STRIPE
-        token = request.form['stripeToken'] 
-        customer = stripe.Customer.create(
-        email=email,
-        source = token,
-        )
+       #token = request.form['stripeToken'] 
+        # customer = stripe.Customer.create(
+        # email=email,
+        # source = token,
+        #)
 
-        stripeID = customer.id
+        #stripeID = customer.id
         
-        db.engine.execute("INSERT INTO users(username,password,email,stripeID,subscriptionID) VALUES (%s, %s,%s,%s)",(username, pw_hash,email,stripeID))
+        db.engine.execute("INSERT INTO users(username,password,email) VALUES (%s, %s,%s)",(username, pw_hash,email))
         
         
 
@@ -319,8 +326,8 @@ class sensorRegisterForm(Form):
 @login_required
 def newSensor():
     form = sensorRegisterForm(request.form)
-    x = current_user.subscriptionID
-    stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
+    #x = current_user.subscriptionID
+    #stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
     # = stripeSubscription.items.plan + 1
     #print(x)
     #print(stripeSubscription.quantity)
@@ -330,9 +337,24 @@ def newSensor():
         location =form.location.data
 
         newSensor = sensors.query.filter_by(rubiconID = rubiconID).first() #Do a database query of the username
-        if not current_user.owners:
-            print('no sensors present')
+        if newSensor:
+            if newSensor.notDeployed == True:
+                newSensor.notDeployed = False
+                newSensor.installation = newSensor.installation + 1
+                activation_Date = activationDate(sensors = newSensor.id,activation_Date = time.strftime('%Y-%m-%d %H:%M:%S') )
+                db.session.add(activation_Date)
+                db.session.add(newSensor) #Add the new object to the que
+                db.session.commit() #Commit it
 
+            else:
+                flash('invalid rubicon ID')
+        else:
+            flash('invalid rubicon ID')
+
+    # id = db.Column('id', db.Integer, primary_key=True) 
+    # sensors = db.Column('sensors', db.Integer,db.ForeignKey('sensors.id'))
+    # activation_Date = db.Column(db.DateTime)
+    # installation = db.Column(db.Integer)
         # if newSensor:
         #     #If the user object got created by the database, then do this stuff
         #     if newSensor.notDeployed == True:
@@ -441,9 +463,9 @@ def deleteSensor():
                 db.session.commit()   
                 db.engine.execute("DELETE FROM owners WHERE sensors_id =%s",(oldSensor.id))
                 db.engine.execute("DELETE FROM views WHERE sensors_id =%s",(oldSensor.id))
-                stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
-                stripeSubscription.quantity = stripeSubscription.quantity - 1
-                stripeSubscription.save()
+                #stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
+                #stripeSubscription.quantity = stripeSubscription.quantity - 1
+                #stripeSubscription.save()
                 flash('Sensor deleted')
                 
                 return redirect(url_for('sensorlist'))
@@ -565,8 +587,6 @@ def index():
 
 
 
-
-
     array_ISO8601 = []
     for items in chartdata:
         array_ISO8601.append(items.ISO8601)
@@ -580,7 +600,12 @@ def index():
     return apiData
 
 
+###################################################JAVASCRIPT GAMES##################################################
 
+
+@app.route('/javascriptGames')
+def javascriptGames():
+    return render_template('javascriptGames/javascriptGames.html')
 
 
 

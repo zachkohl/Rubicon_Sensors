@@ -18,7 +18,20 @@ This will install all the python dependencies.
 
 Make sure your MYSQL database is up and running. Your data must be in databaseURI.txt located in the static folder. the databaseURI.txt is listed in the .gitignore, so it is 
 pecific to each machine. 
+1. Delete the old database in MySQL workbench. 
+2. Create the database again in MySQL, use the same name as the last one so you don't have to update anythin
+3. From command line, python
+    This activates the python interpreter, next type, from app import db 
+    db.create_all()
+    exit()
+4. Check MySQL workbench to make sure database looks good.
+5. app.py
+6. Register new user, sensors, or whatever else you want. 
 
+Use "reverse engineer" under
+
+
+NORMAL OPPERATION:
 
 Run the local server by running: app.py
 
