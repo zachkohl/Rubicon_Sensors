@@ -1,0 +1,47 @@
+{%extends 'layout.html'%}
+
+{%block body %}
+{%include 'includes/navbar.html'%}
+<div class = "container">
+<h1>Register new sensor to the database for registration by customers</h1>
+<form action ="" method ="POST">
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+      </ul>
+  {% endif %}
+{% endwith %}
+
+{% if form.errors %}
+    <ul class="errors">
+        {% for field_name, field_errors in form.errors|dictsort if field_errors %}
+            {% for error in field_errors %}
+                <li>{{ form[field_name].label }}: {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+{% endif %}
+
+
+<div class = "form-group">
+{{form.particleID.label}}
+{{form.particleID}}
+<p></p>
+{{form.iccid.label}}
+{{form.iccid}}  
+<p></p>
+{{form.rubiconID.label}}
+{{form.rubiconID}}  
+<p></p>
+</div>
+<button type = "submit">submit</button>
+
+
+</form>
+
+</div>
+{% endblock %}

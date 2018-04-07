@@ -318,9 +318,80 @@ class sensorRegisterForm(Form):
     rubiconID     = StringField('rubiconID', [validators.Length(max=80),validators.Required()])
     location     = StringField('location', [validators.Length(max=120),validators.Required()])
 
+##################################################ADMIN SENSOR REGISTER################################################
 
+    # id = db.Column(db.Integer, primary_key=True)
+    # #particleID = db.Column(db.String(80), unique=True)
+    # #location = db.Column(db.String(120))
+    ## imei =db.Column(db.String(120))
+    ## iccid =db.Column(db.String(80))
+    ## Data = db.relationship('Data',backref= db.backref('sensorID', lazy=True))
+    ## rubiconID = db.Column(db.String(80), unique=True)
+    # SensorType = db.relationship('sensorType',backref= db.backref('sensorID', lazy=True))
+    # creationDate = db.Column(db.DateTime)
+    # notDeployed = db.Column(db.Boolean)
+    # payementDay = db.Column(db.Integer)
+    # proRate = db.Column(db.Float)
+    # PayedFlag = db.Column(db.Boolean)
+    # statusCode = db.relationship('statusCode',backref= db.backref('sensorID', lazy=True)) 
+    # notes = db.Column('notes', db.Text)
+    # installation = db.Column(db.Integer)
 
+class adminSensorRegisterForm(Form):
+    particleID = StringField('particleID', [validators.Length(max=80),validators.Required()])
+    rubiconID     = StringField('rubiconID', [validators.Length(max=80),validators.Required()])
+    iccid     = StringField('iccid', [validators.Length(max=80),validators.Required()])
 
+@app.route('/adminNewSensor.html', methods = [ "GET", "POST"])
+@login_required
+def adminNewSensor():
+    if not current_user.username == 'admin':
+        return redirect(url_for('home'))
+    #Regular function stuff
+    form =adminSensorRegisterForm(request.form)
+    if request.method == 'POST' and form.validate():
+        particleID = form.particleID.data
+        rubiconID =form.rubiconID.data
+        iccid =form.iccid.data
+
+        #One to many relationship
+    #         sensorTypeName = db.Column('sensorTypeName', db.String(80))                  
+    # aboutSensorType = db.Column('aboutSensorType', db.Text)
+    # monthlyCost = db.Column('monthlyCost', db.Float)
+        ST = sensorType(sensorTypeName = "RiverSense_1",aboutSensorType="This is the first iteration sensor we are working on, circa April 2018.",monthlyCost=4)
+
+        adminSensor = sensors(particleID = particleID,location='notDeployed',imei='notSet',iccid=iccid,rubiconID=rubiconID,SensorType=[ST],creationDate=time.strftime('%Y-%m-%d %H:%M:%S'),notDeployed =True,installation=0)
+        db.session.add(adminSensor)
+        db.session.commit()
+        #db.engine.execute("INSERT INTO SENSORS(particleID,rubiconID,iccid) VALUES (%s, %s, %s)",(particleID,rubiconID,iccid))
+        flash('sensor added and is ready for registration by users')
+        return render_template('adminNewSensor.html',form = form)
+    return render_template('adminNewSensor.html',form = form)
+    # form = sensorRegisterForm(request.form)
+    # print(current_user.owners)
+    # if request.method == 'POST' and form.validate():
+    #     rubiconID = form.rubiconID.data
+    #     location =form.location.data
+
+    #     newSensor = sensors.query.filter_by(rubiconID = rubiconID).first() #Do a database query of the username
+    #     if newSensor:
+    #         if newSensor.notDeployed == True:
+    #             newSensor.notDeployed = False
+    #             newSensor.installation = newSensor.installation + 1
+    #             activation_Date = activationDate(sensors = newSensor.id,activation_Date = time.strftime('%Y-%m-%d %H:%M:%S') )
+    #             db.session.add(activation_Date)
+    #             db.session.add(newSensor) #Add the new object to the que
+    #             db.session.commit() #Commit it
+
+    #         else:
+    #             flash('invalid rubicon ID')
+    #     else:
+    #         flash('invalid rubicon ID')
+
+    
+
+    #     return redirect(url_for('newSensor'))
+    # return render_template('newSensor.html', form= form)
 
 @app.route('/newSensor.html', methods = [ "GET", "POST"])
 @login_required
@@ -336,11 +407,13 @@ def newSensor():
         rubiconID = form.rubiconID.data
         location =form.location.data
 
-        newSensor = sensors.query.filter_by(rubiconID = rubiconID).first() #Do a database query of the username
+        newSensor = sensors.query.filter_by(rubiconID = rubiconID).first() #Do a database query of rubiconID
         if newSensor:
             if newSensor.notDeployed == True:
                 newSensor.notDeployed = False
                 newSensor.installation = newSensor.installation + 1
+                current_user.owners.append(newSensor)
+                newSensor.location = location
                 activation_Date = activationDate(sensors = newSensor.id,activation_Date = time.strftime('%Y-%m-%d %H:%M:%S') )
                 db.session.add(activation_Date)
                 db.session.add(newSensor) #Add the new object to the que
@@ -501,7 +574,10 @@ def dashboard(location):
 
 
     selectedSensor = sensors.query.filter_by(location = location).first()
-    chartdata = selectedSensor.Data
+    sensorID = selectedSensor.id
+    installation =selectedSensor.installation
+
+    chartdata = Data.query.filter_by(sensors =sensorID, installation=installation)
     selectedSensorID = selectedSensor.id
     sensorLocation =selectedSensor.location
             #Google charts tooka lot of work. Here are notes
@@ -515,7 +591,7 @@ def dashboard(location):
                                         #Lists can be iterated over, dictionaries can't. However, lists cannot access their items using dot notation.
                                         #This explains why one must first read the row, then the column. Remember Roman Catholics.
 
-
+    
 
     #The following three lines are how one gets a column out of this thing.
     array_ISO8601 = [] #prep the empty list
@@ -550,8 +626,9 @@ def particle():
         particleID =webhook['coreid']
         selectedSensor = sensors.query.filter_by(particleID = particleID).first()
         selectedSensorID = selectedSensor.id
-        if selectedSensor.notdeployed == False:
-            db.engine.execute("INSERT INTO data(sensors,ISO8601,data) VALUES (%s, %s, %s)",(selectedSensorID,ISO8601, data))
+        installationNumber = selectedSensor.installation
+        if selectedSensor.notDeployed == False:
+            db.engine.execute("INSERT INTO data(sensors,ISO8601,data,installation) VALUES (%s, %s, %s, %s)",(selectedSensorID,ISO8601, data,installationNumber))
         # id | sensors | ISO8601 | data | timestamp
         #newDataPoint = data(sensors=selectedSensorID,ISO8601=ISO8601,data=data)
         #db.session.add(newDataPoint) #Add the new object to the que
@@ -561,8 +638,44 @@ def particle():
 
         return redirect(url_for('register'))
 
-    return render_template('input.html')
+    return redirect(url_for('deleteSensor'))
 
+@app.route('/testData.html') #This function is for the particle webhook
+def testData():
+    if __name__ == '__main__':
+    #TEST DATA 1
+        data = 1  
+        ISO8601 = '2018-04-07T00:02:31.826Z'
+        particleID ="200041001647373037383634"
+        selectedSensor = sensors.query.filter_by(particleID = particleID).first()
+        selectedSensorID = selectedSensor.id
+        installationNumber = selectedSensor.installation
+        if selectedSensor.notDeployed == False:
+            db.engine.execute("INSERT INTO data(sensors,ISO8601,data,installation) VALUES (%s, %s, %s, %s)",(selectedSensorID,ISO8601, data,installationNumber))
+    
+    #TEST DATA 2
+        data = 10  
+        ISO8601 = '2018-04-07T00:03:31.826Z'
+        particleID ="200041001647373037383634"
+        selectedSensor = sensors.query.filter_by(particleID = particleID).first()
+        selectedSensorID = selectedSensor.id
+        installationNumber = selectedSensor.installation
+        if selectedSensor.notDeployed == False:
+            db.engine.execute("INSERT INTO data(sensors,ISO8601,data,installation) VALUES (%s, %s, %s, %s)",(selectedSensorID,ISO8601, data,installationNumber))
+    
+    #TEST DATA 3
+        data = 5  
+        ISO8601 = '2018-04-07T00:04:31.826Z'
+        particleID ="200041001647373037383634"
+        selectedSensor = sensors.query.filter_by(particleID = particleID).first()
+        selectedSensorID = selectedSensor.id
+        installationNumber = selectedSensor.installation
+        if selectedSensor.notDeployed == False:
+            db.engine.execute("INSERT INTO data(sensors,ISO8601,data,installation) VALUES (%s, %s, %s, %s)",(selectedSensorID,ISO8601, data,installationNumber))
+        
+        return 'Data inputed correctly'
+    else:
+        return render_template('input.html') 
 ###################################           ANDROID APP                   #####################################
 
 #See the docs at https://flask-httpauth.readthedocs.io/en/latest/
