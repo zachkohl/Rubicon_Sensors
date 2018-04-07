@@ -283,7 +283,7 @@ def register():
         # customer = stripe.Customer.create(
         # email=email,
         # source = token,
-        )
+        #)
 
         #stripeID = customer.id
         
