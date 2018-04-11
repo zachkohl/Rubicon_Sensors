@@ -38,7 +38,7 @@ As such there is no styling and normal site layout stuff. This page is only for 
     
     var stripe = Stripe('pk_test_Uqssjv6b7oCEtTwCNan1phZu');
     var elements = stripe.elements();
-    }       
+      
     </script>
 
 <form action="/charge" method="post" id="payment-form">
@@ -116,14 +116,14 @@ function stripeTokenHandler(token) {
   // Submit the form
   form.submit();
     }
-else {alert('you must agree to the terms of service and a payment of $4.00 per month')}
+else {alert('you must agree to the terms of service and payments of $4.00 per month for each sensor you register')}
 }
 
 
 </script>
 <div class='license'>
 <form>
-    <p>Please check this box to agree to our<a href=/privacypolicy> privacy policy</a> and suscribe to our monthly sensor service for $4.00 per month</p>
+    <p>Please check this box to agree to our<a href=/privacypolicy> privacy policy</a> and suscribe to our monthly sensor service. Each time sensor your register cost $4.00 per month. Cell towers cost money.</p>
     <input type="checkbox" name= "choice" id='termsbox' value="agree">
 
 </form>

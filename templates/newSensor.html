@@ -3,7 +3,7 @@
 {%block body %}
 {%include 'includes/navbar.html'%}
 <div class = "container">
-<h1>Register new user</h1>
+<h1>Register new Sensor</h1>
 <form action ="" method ="POST">
 
 {% with messages = get_flashed_messages() %}
@@ -16,29 +16,46 @@
   {% endif %}
 {% endwith %}
 
-{% if form.errors %}
-    <ul class="errors">
-        {% for field_name, field_errors in form.errors|dictsort if field_errors %}
-            {% for error in field_errors %}
-                <li>{{ form[field_name].label }}: {{ error }}</li>
-            {% endfor %}
-        {% endfor %}
-    </ul>
-{% endif %}
 
 
-<div class = "form-group">
-{{form.rubiconID.label}}
-{{form.rubiconID}}
-{{form.location.label}}
-{{form.location}}
+<div>
+<form method = 'post', id ='registrationForm'>
+Particle ID:<br>
+<input type="text" name = 'rubiconID'>
+<br>
+Sensor Name:<br>
+<input type="text" name='location'>
 
-</div>
-<button type = "submit">submit</button>
+<p>Please check this box to agree to our<a href=/privacypolicy> privacy policy</a> and <a href =/termsofservice>terms of service</a>. and suscribe to our monthly sensor service. Each time sensor your register cost $4.00 per month. Cell towers cost money.</p>
+<input type="checkbox" name= "choice" value="checkable" id='termsbox'>
 <p></p>
-{{current_user.id}}
-
+<button type="submit" id ='button' >submit</button>
 </form>
-
 </div>
+<!-- <script>
+ window.onload = function(){
+function things() {
+
+        if ($('#termsbox').attr('unchecked')) {
+           $('#registrationForm').submit();
+    }   
+   
+        else      
+        {alert('you must agree to the terms of service and a payment of $4.00 per month');}   
+        
+    };
+        document.getElementById('button').onclick = things()
+}; //end the window.onload
+        </script> -->
+        
+
+
+
+
+<form>
+
+    
+    </form>
+</div>
+<!-- Just have the checkbox return a value as part of the form. Use this value in Pyton to return an error if not true. Make the button a regular button-->
 {% endblock %}
