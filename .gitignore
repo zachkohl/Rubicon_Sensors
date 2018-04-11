@@ -1,2 +1,4 @@
 /static/particleAPI.txt
 /static/databaseURI.txt
+/static/stripeSecretKey.txt
+fillDB.py

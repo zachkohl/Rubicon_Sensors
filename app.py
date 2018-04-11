@@ -25,54 +25,36 @@ bcrypt = Bcrypt(app) #use for encryption
 
 ####################################################DATABASE CONNECTIONS###############################################################
 #Just comment out the parts parts you aren't using and remove the comments for the machine you are using. Should work fine.
-# if __name__ == '__main__':
-#     with open('static/databaseURI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-#         databaseURI=file.read()
-#     app.config['SQLALCHEMY_DATABASE_URI'] = databaseURI
+if __name__ == '__main__':
+    with open('static/databaseURI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
+        databaseURI=file.read()
+    app.config['SQLALCHEMY_DATABASE_URI'] = databaseURI
     
-# else:
-#     sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development.
-#     SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
+else:
+    sslify = SSLify(app) #Runs SSLify, need this in production to force use of SSL. Don't care in development.
+    SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
 
-#         username="rubiconsensors",
-#         password="wf5PWRM4",
-#         hostname="rubiconsensors.mysql.pythonanywhere-services.com",
-#         databasename="rubiconsensors$riversensedb",
-#     )
+        username="rubiconsensors",
+        password="wf5PWRM4",
+        hostname="rubiconsensors.mysql.pythonanywhere-services.com",
+        databasename="rubiconsensors$riversensedb",
+    )
 
 
-#     app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
-#     app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
-#     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# db = SQLAlchemy(app)
-###FOR USE WITH RECREATING DATABASE
-with open('static/databaseURI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-    databaseURI=file.read()
-app.config['SQLALCHEMY_DATABASE_URI'] = databaseURI
+    app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+    app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-
-
-#To rebuild the database on a local machine, comment out the above if statement and uncomment the below code
+###FOR USE WITH RECREATING DATABASE
 # with open('static/databaseURI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
 #     databaseURI=file.read()
 # app.config['SQLALCHEMY_DATABASE_URI'] = databaseURI
 # db = SQLAlchemy(app)
 
-#  #DATABASE: use this stuff for Sam's desktop (CALL ME AND GET ON THE NEW SYSTEM)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
-# db = SQLAlchemy(app)
 
-####################################END DATABASE CONNECTIONS##############################################
-###Stripe Stuff
-# with open('static/stripeSecretKey.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-#     stripe.api_key=file.read()
-# plan = stripe.Plan.create(
-# product={'name': 'Basic Product'},
-# nickname='Basic monthly',
-# interval='month',
-# currency='usd',
-# amount=4,
-# )  
+
+
+
 
 # ########################################FLASK-SQLALCHEMY DATABASE MODELS########################################################
 #Many to many relationship tables. See https://www.youtube.com/watch?v=OvhoYbjtiKc
@@ -124,7 +106,7 @@ class users(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True)
     password = db.Column(db.String(120))
     stripeID = db.Column(db.String(120))
-    subscriptionID = db.Column(db.String(120))
+    subscriptionNumber = db.Column(db.Integer)
     
 
     def __init__(self, username, email,password):
@@ -194,7 +176,7 @@ login_manager.init_app(app) #Associate the instance with the fask app
 class RegistrationForm(Form):
     username     = StringField('Username', [validators.Length(min=4, max=25),validators.Required()])
     password     = PasswordField('Password', [validators.Length(min=4, max=25),validators.Required()])
-    email        = StringField('Email')
+    email        = StringField('Email', [validators.Length(min=4, max=100),validators.Required()])
 
 class LoginForm(Form):
     username     = StringField('Username', [validators.Required()])
@@ -278,14 +260,7 @@ def register():
         password = form.password.data
         email = form.email.data
         pw_hash = bcrypt.generate_password_hash(password)
-        #STRIPE
-       #token = request.form['stripeToken'] 
-        # customer = stripe.Customer.create(
-        # email=email,
-        # source = token,
-        #)
-
-        #stripeID = customer.id
+  
         
         db.engine.execute("INSERT INTO users(username,password,email) VALUES (%s, %s,%s)",(username, pw_hash,email))
         
@@ -318,131 +293,92 @@ class sensorRegisterForm(Form):
     rubiconID     = StringField('rubiconID', [validators.Length(max=80),validators.Required()])
     location     = StringField('location', [validators.Length(max=120),validators.Required()])
 
+##################################################ADMIN SENSOR REGISTER################################################
 
 
+class adminSensorRegisterForm(Form):
+    particleID = StringField('particleID', [validators.Length(max=80),validators.Required()])
+    rubiconID     = StringField('rubiconID', [validators.Length(max=80),validators.Required()])
+    iccid     = StringField('iccid', [validators.Length(max=80),validators.Required()])
+
+@app.route('/adminNewSensor.html', methods = [ "GET", "POST"])
+@login_required
+def adminNewSensor():
+    if not current_user.username == 'admin':
+        return redirect(url_for('home'))
+    #Regular function stuff
+    form =adminSensorRegisterForm(request.form)
+    if request.method == 'POST' and form.validate():
+        particleID = form.particleID.data
+        rubiconID =form.rubiconID.data
+        iccid =form.iccid.data
+        ST = sensorType(sensorTypeName = "RiverSense_1",aboutSensorType="This is the first iteration sensor we are working on, circa April 2018.",monthlyCost=4)
+
+        adminSensor = sensors(particleID = particleID,location='notDeployed',imei='notSet',iccid=iccid,rubiconID=rubiconID,SensorType=[ST],creationDate=time.strftime('%Y-%m-%d %H:%M:%S'),notDeployed =True,installation=0)
+        db.session.add(adminSensor)
+        db.session.commit()
+
+        flash('sensor added and is ready for registration by users')
+        return render_template('adminNewSensor.html',form = form)
+    return render_template('adminNewSensor.html',form = form)
 
 
 @app.route('/newSensor.html', methods = [ "GET", "POST"])
 @login_required
 def newSensor():
-    form = sensorRegisterForm(request.form)
-    #x = current_user.subscriptionID
-    #stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
-    # = stripeSubscription.items.plan + 1
-    #print(x)
-    #print(stripeSubscription.quantity)
-    print(current_user.owners)
-    if request.method == 'POST' and form.validate():
-        rubiconID = form.rubiconID.data
-        location =form.location.data
-
-        newSensor = sensors.query.filter_by(rubiconID = rubiconID).first() #Do a database query of the username
-        if newSensor:
-            if newSensor.notDeployed == True:
-                newSensor.notDeployed = False
-                newSensor.installation = newSensor.installation + 1
-                activation_Date = activationDate(sensors = newSensor.id,activation_Date = time.strftime('%Y-%m-%d %H:%M:%S') )
-                db.session.add(activation_Date)
-                db.session.add(newSensor) #Add the new object to the que
-                db.session.commit() #Commit it
-
+    if current_user.stripeID is None:
+        return redirect(url_for('payment'))
+    if request.method == 'POST':
+        rubiconID = request.form['rubiconID']
+        location = request.form['location']
+        if not request.form.getlist('choice'):
+            flash('please agree to terms of service')
+            return redirect(url_for('newSensor'))            
+        if location == '':
+            flash('please fill in a name')
+            return redirect(url_for('newSensor'))
+        checkName =  db.engine.execute("SELECT id FROM SENSORS JOIN OWNERS ON SENSORS.id = OWNERS.sensors_id WHERE OWNERS.user_id = %s AND SENSORS.location = %s",(current_user.id,location))
+        array_data = []
+        for items in checkName:
+            array_data.append(items.id)
+        print('1')
+        print(array_data)
+        if  array_data ==[]:
+            newSensor = sensors.query.filter_by(rubiconID = rubiconID).first() #Do a database query of rubiconID
+            if newSensor:
+                if newSensor.notDeployed == True:
+                    newSensor.notDeployed = False
+                    newSensor.installation = newSensor.installation + 1
+                    current_user.owners.append(newSensor) #claim ownership
+                    newSensor.location = location
+                    activation_Date = activationDate(sensors = newSensor.id,activation_Date = time.strftime('%Y-%m-%d %H:%M:%S') )
+                    current_user.subscriptionNumber += 1
+                    db.session.add(activation_Date)
+                    db.session.add(newSensor)
+                    db.session.add(current_user)
+                    subscription = stripe.Subscription.create(
+                    customer=current_user.stripeID,
+                    items=[
+                    {
+                    'plan': '988931021243392',
+                    'quantity': current_user.subscriptionNumber,
+                    },
+                    ],
+                    )
+                    db.session.commit() #Commit it
+                    flash('Sensor ' + newSensor.location + " successfully registered" )
+                    return redirect(url_for('sensorlist'))
+                else:
+                    flash('Invalid rubicon ID')
+                    return redirect(url_for('newSensor'))
             else:
-                flash('invalid rubicon ID')
+                flash('Invalid rubicon ID')
+                return redirect(url_for('newSensor'))
         else:
-            flash('invalid rubicon ID')
-
-    # id = db.Column('id', db.Integer, primary_key=True) 
-    # sensors = db.Column('sensors', db.Integer,db.ForeignKey('sensors.id'))
-    # activation_Date = db.Column(db.DateTime)
-    # installation = db.Column(db.Integer)
-        # if newSensor:
-        #     #If the user object got created by the database, then do this stuff
-        #     if newSensor.notDeployed == True:
-        #         newSensor.notDeployed = False
-        #         if not current_user.owners:
-        #             print('no sensors present')
-        #             subscription = stripe.Subscription.create(
-        #             customer=customer.id,
-        #             items=[
-        #             {
-        #             'plan': '988931021243392',
-        #             'quantity': 1,
-        #             }
-        #             ],
-        #             )
-        #         else:
-        #             subscriptionID = subscription.id
-        #             stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
-        #             stripeSubscription.quantity = stripeSubscription.quantity + 1
-        #             stripeSubscription.save()
-        #         newSensor.owner.append(current_user) #add relationship in many to many table
-        #         newSensor.viewers.append(current_user)
-        #         newSensor.creationDate = datetime.datetime.now()
-        #         #STRIPE
-
-
-                
-                    # print(current_user.owners)
-
-                # # #newSensor.proRate = #FIGURE THIS OUT LATER
-                # #newSensor.statusCode.append(1) Need to fix this
-                # newSensor.notes ='This sensor is now deployed'
-                # db.session.commit()
-                # flash('Sensor created')
-                
-        #         return redirect(url_for('sensorlist'))
-        #     else:
-        #         flash('sensor already registered')
-        #         return redirect(url_for('newSensor'))
-        # else:
-        #     flash('invalid registration code')
-        #     return redirect(url_for('newSensor'))
-        
-
-        # newSensor = sensors(particleID=particleID,location=location,imei=imei,iccid=iccid)
-        # db.session.add(newSensor) #Add the new object to the que
-        # ID = current_user.id
-        # newSensor.owner.append(current_user) #add relationship in many to many table
-        # newSensor.viewers.append(current_user)
-        # db.session.commit() #Push it to the database
-
-        #Particle API
-            #See http://docs.python-requests.org/en/master/user/quickstart/
-            #See https://docs.particle.io/reference/api/#create-an-oauth-client
-        # Example with form encoded format
-        #with open('static/particleAPI.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-        #    client_secret=file.read()
-        #client_id = 'sensorregistration-2783'
-
-
-        #THE KEY IS GOING TO BE ACTIVATE/DEACTIVATE SIM CARDS, everything else can be handled through Particle GUI
-
-        #authorization_base_url =""
-        #token_url = ""
-        #scope = [""]
-        #oauth = oAuth2Session(client_id, redict_uri, scope=scope)
-
-
-
-        #ParticleToken = oauth.fetch_token(token_url, client_secret=client_secret,authorization_response=request.url)
-
-        #Access resources
-        #ParticleResources = oauth.get('resources url')
-
-        # #The following sets up a shadow customer on the particle server
-        # payload = {'email':current_user.email,'no_password':'true'}
-        # particle = requests.post('https://'+client_id+':'+client_secret+'@https://api.particle.io/v1/products/7107/customers',data=payload)
-        # #particle is now the access token
-
-        # #create claim code
-        # payload = {'access_token':particle,'imei':imei,'iccid':iccid} #probably going to have trouble because the particle object won't return the proper token data
-        # claimCode = requests.post('https://'+client_id+':'+client_secret+'@https://api.particle.io/v1/products/7107/device_claims',data=payload)
-
-
-        #The following helps with CSRF attacks, https://requests-oauthlib.readthedocs.io/en/latest/examples/real_world_example.html
-        #session['oauth_state'] = state
+            flash('You already have a sensor by that name')
         return redirect(url_for('newSensor'))
-    return render_template('newSensor.html', form= form)
+    
+    return render_template('newSensor.html')
 ###############################################DELETE SENSOR#####################################################
 @app.route('/deleteSensor.html', methods = [ "GET", "POST"])
 @login_required
@@ -460,12 +396,31 @@ def deleteSensor():
             if oldSensor.owner[0] == current_user:
                 oldSensor.notDeployed = True
                 oldSensor.deletionDate = datetime.datetime.now()
-                db.session.commit()   
+                  
                 db.engine.execute("DELETE FROM owners WHERE sensors_id =%s",(oldSensor.id))
                 db.engine.execute("DELETE FROM views WHERE sensors_id =%s",(oldSensor.id))
-                #stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
-                #stripeSubscription.quantity = stripeSubscription.quantity - 1
-                #stripeSubscription.save()
+                
+                current_user.subscriptionNumber = current_user.subscriptionNumber - 1
+                customer = stripe.Customer.retrieve(current_user.stripeID, expand=['subscriptions'])
+                subscription = customer.subscriptions.data
+                obj = subscription[0]
+                obj2 =obj.id
+
+                if current_user.subscriptionNumber == 0:
+                    customer = stripe.Customer.retrieve(current_user.stripeID)
+                    subscription = stripe.Subscription.retrieve(obj2)
+                    subscription.delete()
+                else:
+                    subscription = stripe.Subscription.create(
+                    customer=current_user.stripeID,
+                    items=[
+                    {
+                    'plan': '988931021243392',
+                    'quantity': current_user.subscriptionNumber,
+                    },
+                    ],
+                    )
+                db.session.commit()
                 flash('Sensor deleted')
                 
                 return redirect(url_for('sensorlist'))
@@ -501,7 +456,10 @@ def dashboard(location):
 
 
     selectedSensor = sensors.query.filter_by(location = location).first()
-    chartdata = selectedSensor.Data
+    sensorID = selectedSensor.id
+    installation =selectedSensor.installation
+
+    chartdata = Data.query.filter_by(sensors =sensorID, installation=installation)
     selectedSensorID = selectedSensor.id
     sensorLocation =selectedSensor.location
             #Google charts tooka lot of work. Here are notes
@@ -515,7 +473,7 @@ def dashboard(location):
                                         #Lists can be iterated over, dictionaries can't. However, lists cannot access their items using dot notation.
                                         #This explains why one must first read the row, then the column. Remember Roman Catholics.
 
-
+    
 
     #The following three lines are how one gets a column out of this thing.
     array_ISO8601 = [] #prep the empty list
@@ -538,7 +496,7 @@ def dashboard(location):
     return render_template('dashboard.html',array_ISO8601=array_ISO8601,data=array_data,selectedSensorID=selectedSensorID,sensorLocation=sensorLocation) #Pass arrays containing columns to the javascript
 
 
-
+############################################################# INPUT #######################################################################################
 
 @app.route('/input.html', methods = ['GET', 'POST']) #This function is for the particle webhook
 def particle():
@@ -550,8 +508,9 @@ def particle():
         particleID =webhook['coreid']
         selectedSensor = sensors.query.filter_by(particleID = particleID).first()
         selectedSensorID = selectedSensor.id
-        if selectedSensor.notdeployed == False:
-            db.engine.execute("INSERT INTO data(sensors,ISO8601,data) VALUES (%s, %s, %s)",(selectedSensorID,ISO8601, data))
+        installationNumber = selectedSensor.installation
+        if selectedSensor.notDeployed == False:
+            db.engine.execute("INSERT INTO data(sensors,ISO8601,data,installation) VALUES (%s, %s, %s, %s)",(selectedSensorID,ISO8601, data,installationNumber))
         # id | sensors | ISO8601 | data | timestamp
         #newDataPoint = data(sensors=selectedSensorID,ISO8601=ISO8601,data=data)
         #db.session.add(newDataPoint) #Add the new object to the que
@@ -561,7 +520,84 @@ def particle():
 
         return redirect(url_for('register'))
 
-    return render_template('input.html')
+    return redirect(url_for('deleteSensor'))
+############################################################################### TEST DATA #########################################################################
+@app.route('/testData.html') #This function is for the particle webhook
+def testData():
+    if __name__ == '__main__':
+    #TEST DATA 1
+        data = 1  
+        ISO8601 = '2018-04-07T00:02:31.826Z'
+        particleID ="200041001647373037383634"
+        selectedSensor = sensors.query.filter_by(particleID = particleID).first()
+        selectedSensorID = selectedSensor.id
+        installationNumber = selectedSensor.installation
+        if selectedSensor.notDeployed == False:
+            db.engine.execute("INSERT INTO data(sensors,ISO8601,data,installation) VALUES (%s, %s, %s, %s)",(selectedSensorID,ISO8601, data,installationNumber))
+    
+    #TEST DATA 2
+        data = 10  
+        ISO8601 = '2018-04-07T00:03:31.826Z'
+        particleID ="200041001647373037383634"
+        selectedSensor = sensors.query.filter_by(particleID = particleID).first()
+        selectedSensorID = selectedSensor.id
+        installationNumber = selectedSensor.installation
+        if selectedSensor.notDeployed == False:
+            db.engine.execute("INSERT INTO data(sensors,ISO8601,data,installation) VALUES (%s, %s, %s, %s)",(selectedSensorID,ISO8601, data,installationNumber))
+    
+    #TEST DATA 3
+        data = 5  
+        ISO8601 = '2018-04-07T00:04:31.826Z'
+        particleID ="200041001647373037383634"
+        selectedSensor = sensors.query.filter_by(particleID = particleID).first()
+        selectedSensorID = selectedSensor.id
+        installationNumber = selectedSensor.installation
+        if selectedSensor.notDeployed == False:
+            db.engine.execute("INSERT INTO data(sensors,ISO8601,data,installation) VALUES (%s, %s, %s, %s)",(selectedSensorID,ISO8601, data,installationNumber))
+        
+        return 'Data inputed correctly'
+    else:
+        return render_template('input.html') 
+
+############################################Stripe Stuff#############################################################
+with open('static/stripeSecretKey.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
+    stripe.api_key=file.read()
+stripe.api_version = '2018-02-28'
+
+################################################# STRIPE PAYEMENT #########################################################################################
+
+@app.route('/payment.html')
+def payment():
+
+    return render_template('payment.html')
+
+@app.route('/charge', methods = ['POST'])
+def charge():
+    token = request.form['stripeToken'] 
+    customer = stripe.Customer.create(
+    source=token,
+    email=current_user.email
+    )
+    current_user.stripeID = customer.id
+    current_user.subscriptionID = 0
+    db.session.commit()
+
+    subscription = stripe.Subscription.create(
+    customer=current_user.stripeID,
+    items=[{'plan': '988931021243392'}],
+            )
+    return render_template('charge.html')
+
+@app.route('/privacypolicy')
+def privacypolicy():
+
+    return render_template('privacypolicy.html')
+
+@app.route('/termsofservice')
+def termsofservice():
+
+    return render_template('termsofservice.html')
+
 
 ###################################           ANDROID APP                   #####################################
 
@@ -616,7 +652,7 @@ def javascriptGames():
 app.secret_key="jyooGbO0eXelz9lrRQH6f0FL4r57SRM8"
 if __name__ == '__main__':
 
-    app.run(debug=True)
+    app.run(debug=True) #,ssl_context="adhoc"
 
 
 

@@ -3,7 +3,7 @@
 {%block body %}
 {%include 'includes/navbar.html'%}
 <div class = "container">
-<h1>Register new user</h1>
+<h1>Register new sensor to the database for registration by customers</h1>
 <form action ="" method ="POST">
 
 {% with messages = get_flashed_messages() %}
@@ -28,20 +28,20 @@
 
 
 <div class = "form-group">
-{{form.username.label}}
-{{form.username}}
-{{form.password.label}}
-{{form.password}}
-{{form.email.label}}
-{{form.email}}
+{{form.particleID.label}}
+{{form.particleID}}
+<p></p>
+{{form.iccid.label}}
+{{form.iccid}}  
+<p></p>
+{{form.rubiconID.label}}
+{{form.rubiconID}}  
+<p></p>
 </div>
 <button type = "submit">submit</button>
 
 
 </form>
-{{y}}
+
 </div>
-{%for values in x%}
-{{values.username}}
-{%endfor%}
 {% endblock %}

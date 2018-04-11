@@ -1,0 +1,22 @@
+{%extends 'layout.html'%}
+
+{%block body %}
+{%include 'includes/navbar.html'%}
+<div class = "container">
+<h1>Terms of Service</h1>
+<form action ="" method ="POST">
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+      </ul>
+  {% endif %}
+{% endwith %}
+
+<p>
+We may provide you services, or we may not. What and when we provide services is entirely up to us. We can change this at anytime we want without notifying you. 
+</p>
+{% endblock %}

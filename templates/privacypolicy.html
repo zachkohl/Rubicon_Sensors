@@ -1,0 +1,26 @@
+{%extends 'layout.html'%}
+
+{%block body %}
+{%include 'includes/navbar.html'%}
+<div class = "container">
+<h1>Privacy Policy</h1>
+<form action ="" method ="POST">
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+      </ul>
+  {% endif %}
+{% endwith %}
+
+<p>
+We get all your data.
+</p><p>
+We need all your data because we are turning around and sharing it with python anywhere, and they say the need our data, which means your data.
+</p><p>
+So don't use if paranoid. 
+</p>
+{% endblock %}

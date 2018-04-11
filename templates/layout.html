@@ -6,15 +6,18 @@
 
 <title>Rubicon Sensors</title>
 <link rel="stylesheet" href ="{{url_for('static', filename= "bootstrap.min.css")}}">
+<link rel="stylesheet" href ="{{url_for('static', filename= "stripeCSS.css")}}">
 <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css"> -->
+<script language="JavaScript" type="text/javascript" src="{{url_for('static', filename ='jquery-3.2.1.min.js')}}"></script>
+<script language="JavaScript" type="text/javascript" src="{{url_for('static', filename ='popper.min.js')}}"></script>
+<script language="JavaScript" type="text/javascript" src="{{url_for('static', filename ='bootstrap.min.js')}}"></script>
 </head>
 <body>
   {%block body%}
   {%endblock%}
   <!-- mosly hard codded links  -->
-<script src="{{url_for('static', filename ='jquery-3.2.1.min.js')}}"></script>
-<script src="{{url_for('static', filename ='popper.min.js')}}"></script>
-<script src="{{url_for('static', filename ='bootstrap.min.js')}}"></script>
+
+
 
 
 <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
