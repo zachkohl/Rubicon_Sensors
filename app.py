@@ -62,17 +62,8 @@ db = SQLAlchemy(app)
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:password@localhost:3306/sakila'
 # db = SQLAlchemy(app)
 
-####################################END DATABASE CONNECTIONS##############################################
-###Stripe Stuff
-# with open('static/stripeSecretKey.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
-#     stripe.api_key=file.read()
-# plan = stripe.Plan.create(
-# product={'name': 'Basic Product'},
-# nickname='Basic monthly',
-# interval='month',
-# currency='usd',
-# amount=4,
-# )  
+
+
 
 # ########################################FLASK-SQLALCHEMY DATABASE MODELS########################################################
 #Many to many relationship tables. See https://www.youtube.com/watch?v=OvhoYbjtiKc
@@ -278,14 +269,7 @@ def register():
         password = form.password.data
         email = form.email.data
         pw_hash = bcrypt.generate_password_hash(password)
-        #STRIPE
-       #token = request.form['stripeToken'] 
-        # customer = stripe.Customer.create(
-        # email=email,
-        # source = token,
-        #)
-
-        #stripeID = customer.id
+  
         
         db.engine.execute("INSERT INTO users(username,password,email) VALUES (%s, %s,%s)",(username, pw_hash,email))
         
@@ -353,55 +337,25 @@ def adminNewSensor():
         particleID = form.particleID.data
         rubiconID =form.rubiconID.data
         iccid =form.iccid.data
-
-        #One to many relationship
-    #         sensorTypeName = db.Column('sensorTypeName', db.String(80))                  
-    # aboutSensorType = db.Column('aboutSensorType', db.Text)
-    # monthlyCost = db.Column('monthlyCost', db.Float)
         ST = sensorType(sensorTypeName = "RiverSense_1",aboutSensorType="This is the first iteration sensor we are working on, circa April 2018.",monthlyCost=4)
 
         adminSensor = sensors(particleID = particleID,location='notDeployed',imei='notSet',iccid=iccid,rubiconID=rubiconID,SensorType=[ST],creationDate=time.strftime('%Y-%m-%d %H:%M:%S'),notDeployed =True,installation=0)
         db.session.add(adminSensor)
         db.session.commit()
-        #db.engine.execute("INSERT INTO SENSORS(particleID,rubiconID,iccid) VALUES (%s, %s, %s)",(particleID,rubiconID,iccid))
+
         flash('sensor added and is ready for registration by users')
         return render_template('adminNewSensor.html',form = form)
     return render_template('adminNewSensor.html',form = form)
-    # form = sensorRegisterForm(request.form)
-    # print(current_user.owners)
-    # if request.method == 'POST' and form.validate():
-    #     rubiconID = form.rubiconID.data
-    #     location =form.location.data
 
-    #     newSensor = sensors.query.filter_by(rubiconID = rubiconID).first() #Do a database query of the username
-    #     if newSensor:
-    #         if newSensor.notDeployed == True:
-    #             newSensor.notDeployed = False
-    #             newSensor.installation = newSensor.installation + 1
-    #             activation_Date = activationDate(sensors = newSensor.id,activation_Date = time.strftime('%Y-%m-%d %H:%M:%S') )
-    #             db.session.add(activation_Date)
-    #             db.session.add(newSensor) #Add the new object to the que
-    #             db.session.commit() #Commit it
-
-    #         else:
-    #             flash('invalid rubicon ID')
-    #     else:
-    #         flash('invalid rubicon ID')
-
-    
-
-    #     return redirect(url_for('newSensor'))
-    # return render_template('newSensor.html', form= form)
 
 @app.route('/newSensor.html', methods = [ "GET", "POST"])
 @login_required
 def newSensor():
+    if current_user.stripeID == '':
+        return redirect(url_for('payment'))
+
     form = sensorRegisterForm(request.form)
-    #x = current_user.subscriptionID
-    #stripeSubscription = stripe.Subscription.retrieve(current_user.subscriptionID)
-    # = stripeSubscription.items.plan + 1
-    #print(x)
-    #print(stripeSubscription.quantity)
+
     print(current_user.owners)
     if request.method == 'POST' and form.validate():
         rubiconID = form.rubiconID.data
@@ -614,7 +568,7 @@ def dashboard(location):
     return render_template('dashboard.html',array_ISO8601=array_ISO8601,data=array_data,selectedSensorID=selectedSensorID,sensorLocation=sensorLocation) #Pass arrays containing columns to the javascript
 
 
-
+############################################################# INPUT #######################################################################################
 
 @app.route('/input.html', methods = ['GET', 'POST']) #This function is for the particle webhook
 def particle():
@@ -639,7 +593,7 @@ def particle():
         return redirect(url_for('register'))
 
     return redirect(url_for('deleteSensor'))
-
+############################################################################### TEST DATA #########################################################################
 @app.route('/testData.html') #This function is for the particle webhook
 def testData():
     if __name__ == '__main__':
@@ -676,6 +630,42 @@ def testData():
         return 'Data inputed correctly'
     else:
         return render_template('input.html') 
+
+############################################Stripe Stuff#############################################################
+with open('static/stripeSecretKey.txt','r') as file: #See https://docs.python.org/3/library/functions.html#open
+    stripe.api_key=file.read()
+stripe.api_version = '2018-02-28'
+
+################################################# STRIPE PAYEMENT #########################################################################################
+
+@app.route('/payment.html')
+def payment():
+
+    return render_template('payment.html')
+
+@app.route('/charge', methods = ['POST'])
+def charge():
+    token = request.form['stripeToken'] 
+    customer = stripe.Customer.create(
+    source=token,
+    email=current_user.email
+    )
+    current_user.stripeID = customer.id
+    db.session.commit()
+
+    subscription = stripe.Subscription.create(
+    customer=current_user.stripeID,
+    items=[{'plan': '988931021243392'}],
+            )
+    flash(current_user.username)
+    return render_template('charge.html')
+
+@app.route('/privacypolicy')
+def privacypolicy():
+
+    return render_template('privacypolicy.html')
+
+
 ###################################           ANDROID APP                   #####################################
 
 #See the docs at https://flask-httpauth.readthedocs.io/en/latest/
@@ -729,7 +719,7 @@ def javascriptGames():
 app.secret_key="jyooGbO0eXelz9lrRQH6f0FL4r57SRM8"
 if __name__ == '__main__':
 
-    app.run(debug=True)
+    app.run(debug=True) #,ssl_context="adhoc"
 
 
 

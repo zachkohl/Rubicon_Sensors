@@ -1,0 +1,23 @@
+{%extends 'layout.html'%}
+
+{%block body %}
+{%include 'includes/navbar.html'%}
+<div class = "container">
+<h1>Register new user</h1>
+<form action ="" method ="POST">
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+      </ul>
+  {% endif %}
+{% endwith %}
+
+<p>Thanks, your credit card has been stored and you are now signed up for service with Rubicon Sensors</p>
+
+
+
+{% endblock %}
