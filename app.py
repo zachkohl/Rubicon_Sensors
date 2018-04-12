@@ -301,6 +301,29 @@ class adminSensorRegisterForm(Form):
     rubiconID     = StringField('rubiconID', [validators.Length(max=80),validators.Required()])
     iccid     = StringField('iccid', [validators.Length(max=80),validators.Required()])
 
+@app.route('/adminNewSensor.html', methods = [ "GET", "POST"])
+@login_required
+def adminNewSensor():
+    if not current_user.username == 'admin':
+        return redirect(url_for('home'))
+    #Regular function stuff
+    form =adminSensorRegisterForm(request.form)
+    if request.method == 'POST' and form.validate():
+        particleID = form.particleID.data
+        rubiconID =form.rubiconID.data
+        iccid =form.iccid.data
+        ST = sensorType(sensorTypeName = "RiverSense_1",aboutSensorType="This is the first iteration sensor we are working on, circa April 2018.",monthlyCost=4)
+
+        adminSensor = sensors(particleID = particleID,location='notDeployed',imei='notSet',iccid=iccid,rubiconID=rubiconID,SensorType=[ST],creationDate=time.strftime('%Y-%m-%d %H:%M:%S'),notDeployed =True,installation=0)
+        db.session.add(adminSensor)
+        db.session.commit()
+
+        flash('sensor added and is ready for registration by users')
+        return render_template('adminNewSensor.html',form = form)
+    return render_template('adminNewSensor.html',form = form)
+
+
+
 @app.route('/newSensor.html', methods = [ "GET", "POST"])
 @login_required
 def newSensor():
