@@ -482,7 +482,7 @@ def dashboard(location):
 
     array_data = []
     for items in chartdata:
-        array_data.append(float(items.data))
+        array_data.append((float(items.data))*0.26417) #Convert to gallons, see https://www.metric-conversions.org/volume/liters-to-us-liquid-gallons.htm
         #Exlpanation on float(str())
         # Recall that javascript stores all numbers as just a 'number'.
         # A number in javascript is always a floating point number. Google charts is javascript,
