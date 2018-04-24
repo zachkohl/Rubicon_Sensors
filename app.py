@@ -615,7 +615,7 @@ def verify_password(username,password):
     return False
 
 @app.route('/api')
-@auth.login_required
+#@auth.login_required #Not going to require login to view this page
 def index():
     selectedSensor = sensors.query.filter_by(location = 'dashboard').first()
     chartdata = selectedSensor.Data
